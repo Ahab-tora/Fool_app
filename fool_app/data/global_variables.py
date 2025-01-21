@@ -9,7 +9,7 @@ import os
 
 #--- --- Paths
 
-base_url = "http://127.0.0.1:8000/END"
+base_url = "http://10.69.240.231:8000/END"
 
 
 
