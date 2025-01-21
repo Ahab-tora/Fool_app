@@ -26,8 +26,21 @@ from data import global_variables
 api_key = 'YWUwZGY2MGEtYjA4NS00NzcyLThjYzItNTk4NTJkODQ5MWNiOjo2YjZkNjA0Ni00NDZmLTQ4YTctODU3Yy0zNzQ2MDc0M2FmNTk'
 
 types_list = ['production','R&d','Compositing','rendering','storyboard','lookdev','scenario','grading','setDressing','reference','rigging','editing','animation','Lighting','PAO','design','Generic','layout','CFX','FX','modeling']
-status_ftrack_list = 'WIP','Not started','-','INV','R&D','RETAKE','Pending Review','REVIEW_team','REVIEW_sup','TO_RENDER','ON HOLD','BUG','APPROVED','DONE','OUT'
+#status_ftrack_list = 'WIP','Not started','-','INV','R&D','RETAKE','Pending Review','REVIEW_team','REVIEW_sup','TO_RENDER','ON HOLD','BUG','APPROVED','DONE','OUT'
 
+api_user = 'e.guinet-elmi@lyn.ecolescreatives.com'
+api_key = 'YWUwZGY2MGEtYjA4NS00NzcyLThjYzItNTk4NTJkODQ5MWNiOjo2YjZkNjA0Ni00NDZmLTQ4YTctODU3Yy0zNzQ2MDc0M2FmNTk'
+session = ftrack_api.Session(
+server_url=global_variables.server_url,
+api_key=api_key,
+api_user=global_variables.api_user,)
+
+status_query = session.query('Status').all()
+status_ftrack_list  = []
+for status in status_query:
+    status_ftrack_list.append(status['name'])
+
+session.close()
 
 class Ftrack_tab(QWidget):
     '''
@@ -475,10 +488,13 @@ def change_ftrack_data(task_name,parent_name,data_type,data):
                          and name is {task_name}
                          
                          ''').first()
-
+    print(task)
+    print(data)
+    
     if data_type == 'status':
 
-        task['status']['name'] = data
+        status = session.query(f'Status where name is "{data}"').first()
+        task['status'] = status
 
     if data_type == 'assignee':
         new_assignee = session.query(f'User where last_name is "{data}"').first()
@@ -851,11 +867,12 @@ def create_task(manage_connection:bool,task_name:str,task_type:str,parent,sessio
     parent_asset = session.query(f'''Asset_ where project.name is {global_variables.project_name}
                                  and parent.parent.name is 05_asset
                                  and name is {parent}''').first()
-    
+    base_status =  session.query(f'Status where name is "-"').first()
     task = session.create('Task',{
         'name':task_name+'_task',
         "parent":parent_asset,
-        'type': task_type})
+        'type': task_type,
+        'status':base_status },)
 
     if manage_connection:
         session.commit()
