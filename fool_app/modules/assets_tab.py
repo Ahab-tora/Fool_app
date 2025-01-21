@@ -638,8 +638,8 @@ import maya.cmds as cmds
 def onMayaDroppedPythonFile(*args):
     print('putain')
     
-
-    cmds.file({file_path_formatted}, reference=True)
+    file_path = '{file_path_formatted}'
+    cmds.file(file_path, reference=True)
 print('putain x2')
 
 
