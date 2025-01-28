@@ -959,7 +959,7 @@ print('putain x2')
 
 '''
             
-            temp_file_name = f'temp_file_drop_{uuid.uuid4}.py'
+            temp_file_name = f'temp_file_drop_{uuid.uuid4()}.py'
             temp_file_path = global_variables.fool_path + '\\temp\\' + temp_file_name 
             temp_file_path = temp_file_path.replace('\\','/')
 
