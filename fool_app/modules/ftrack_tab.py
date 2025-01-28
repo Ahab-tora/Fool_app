@@ -867,7 +867,9 @@ def create_task(manage_connection:bool,task_name:str,task_type:str,parent,sessio
     parent_asset = session.query(f'''Asset_ where project.name is {global_variables.project_name}
                                  and parent.parent.name is 05_asset
                                  and name is {parent}''').first()
+    
     base_status =  session.query(f'Status where name is "-"').first()
+
     task = session.create('Task',{
         'name':task_name+'_task',
         "parent":parent_asset,
