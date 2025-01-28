@@ -8,10 +8,7 @@ import sqlite3
 import data
 from data import global_variables
 
-#python -m fool_app.bin.main
 
-#sys.path.append('c:\\Users\\laure\\Desktop\\Nouveau dossier\\code')
-import modules
 from modules.treeview_tab import Treeview
 from modules.welcome_tab import Welcome
 from modules.ftrack_tab import Ftrack_tab
@@ -32,8 +29,8 @@ class Fool (QMainWindow):
 
         #we call the tabs
         
-        self.welcome_tab = Welcome()
-        self.tab_widget.addTab(self.welcome_tab,'welcome tab')
+        '''self.welcome_tab = Welcome()
+        self.tab_widget.addTab(self.welcome_tab,'welcome tab')'''
 
         '''self.treeview_tab = Treeview(root_path=global_variables.root_path,table_path= global_variables.tables_path + '\\treeview_table.db')
         self.tab_widget.addTab(self.treeview_tab,'treeview tab')'''
@@ -43,7 +40,7 @@ class Fool (QMainWindow):
 
         self.assets_tab = Assets_tab()
         self.tab_widget.addTab(self.assets_tab,'Assets tab')
-        
+
 
         cursor_path = QPixmap(global_variables.fool_path + '\\icons\\pointer_gauntlet.png')
         self.gauntlet_cursor = QCursor(cursor_path,0,0)
