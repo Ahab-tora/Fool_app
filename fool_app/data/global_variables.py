@@ -18,6 +18,7 @@ fool_path = os.getcwd()
 pipeline_path = '\\\\Storage\\esma\\3D4\\threeLittlePigs'
 root_path = pipeline_path
 tables_path = 'D:\\code\\Fool_v3_versions\\Fool_v3_15.01.25\\fool_server\\data\\END_data\\files_db'
+assets_path = '\\04_assets'
 
 #--- --- Ftrack data
 server_url = 'https://esma-lyon.ftrackapp.com'
