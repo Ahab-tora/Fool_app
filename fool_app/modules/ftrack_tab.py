@@ -48,12 +48,20 @@ class Ftrack_tab(QWidget):
     '''
     def __init__(self):
         super().__init__()
-
+        self.loaded = False
 
         self.ftrack_tab_layout = QVBoxLayout()
         self.setLayout(self.ftrack_tab_layout)
+        self.loaded = False
 
+        self.load_ftrack_button = QPushButton('Load Ftrack')
+        self.load_ftrack_button.clicked.connect(self.load_ftrack)
+        self.ftrack_tab_layout.addWidget(self.load_ftrack_button)
+        
+    def on_display(self):
+        pass
 
+    def load_ftrack(self):
         self.ftrack_tab_widget = QTabWidget()
         self.ftrack_tab_widget.setDocumentMode(True)
         self.ftrack_tab_widget.setMovable(True) 
@@ -67,6 +75,8 @@ class Ftrack_tab(QWidget):
 
         #self.Sequences_subtab = Sequences_subtab()
         #self.ftrack_tab_widget.addTab(self.Sequences_subtab,'Sequences')
+        self.load_ftrack_button.deleteLater()
+        self.loaded=True
 
 
 class Main_subtab(QWidget):

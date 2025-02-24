@@ -27,6 +27,10 @@ class Treeview(QWidget):
     '''
     def __init__(self,root_path,table_path):
         logging.debug('Launching Treeview __init__')
+
+        self.loaded = False
+
+
         super().__init__()
 
         self.treeview_tab_layout = QVBoxLayout()
@@ -39,6 +43,8 @@ class Treeview(QWidget):
         self.treeview_wgt.doubleClicked.connect(self.open_item)
         self.treeview_tab_layout.addWidget(self.treeview_wgt)
 
+    def on_display(self):
+        pass
     def open_item(self,index):
         logging.debug('Launching open_item')
         #launches the selected item when double clicked
@@ -89,7 +95,6 @@ class Treeview_SubClass(QTreeView):
           
             event.accept()
         
-        # Process each file dropped
         for url in event.mimeData().urls():
             source_file_path = url.toLocalFile()
             
@@ -100,7 +105,6 @@ class Treeview_SubClass(QTreeView):
             if not os.path.isdir(destination_file_path):
                 destination_file_path = os.path.split(destination_file_path)[0]
             shutil.copy(source_file_path,destination_file_path)
-        # Implement file move/copy logic if needed
         else:
             event.ignore()
 

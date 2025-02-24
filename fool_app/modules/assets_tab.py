@@ -2,13 +2,13 @@
 #--- --- Imports
 
 #--- PySide6 imports
-from PySide6.QtWidgets import QButtonGroup,QRadioButton,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QDialogButtonBox,QDialog,QLabel,QTableView,QHeaderView
+from PySide6.QtWidgets import QCheckBox,QButtonGroup,QRadioButton,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QDialogButtonBox,QDialog,QLabel,QTableView,QHeaderView
 from PySide6.QtWidgets import  QGridLayout, QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy
 from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag
 from PySide6.QtCore import Qt,QMimeData,QUrl
 
 #--- Standard library imports
-import os,shutil,sqlite3,logging,uuid
+import os,shutil,sqlite3,logging,uuid,time
 from pathlib import Path
 import requests
 
@@ -16,6 +16,7 @@ import requests
 
 import data
 from data import global_variables
+from .utilities import update_recently_opened,set_as_favorite
 
 #--- --- --- ---#
 
@@ -26,7 +27,7 @@ class Assets_tab(QWidget):
     def __init__(self):
         super().__init__()
 
-
+        self.loaded = False
 
         self.asset_tab_layout = QHBoxLayout()
         self.setLayout(self.asset_tab_layout)
@@ -46,15 +47,9 @@ class Assets_tab(QWidget):
         #we create Assets_subtab instance for each asset type, example : character,item,prop,FX
         self.Assets_subtab_instances = {}
         for asset_type in asset_types:
-            print(asset_type)
             self.Assets_subtab_instances[asset_type] = Assets_subtab(asset_type=asset_type,parent_class=self)
             self.assets_tab_widget.addTab(self.Assets_subtab_instances[asset_type],asset_type)
         self.active_asset_subtab = self.assets_tab_widget.currentWidget()
-
-
-        '''self.publish_tab = Publish_tab()
-        self.assets_tab_widget.addTab(self.publish_tab,'publish tab')'''
-
 
         #--- --- ---
 
@@ -82,8 +77,8 @@ class Assets_tab(QWidget):
         #--- --- ---
         
         self.files_view_model = QStandardItemModel()
-        #self.files_view_model.setHorizontalHeaderLabels(["Name", "Last Modification", "Comment"])
-        self.files_view_model.setHorizontalHeaderLabels(["Name", "Last Modification"])
+        self.files_view_model.setHorizontalHeaderLabels(["Name", "Last Modification", "Comment"])
+        #self.files_view_model.setHorizontalHeaderLabels(["Name", "Last Modification"])
 
         self.files_view = QTableView()
         self.asset_tab_sublayout.addWidget(self.files_view,stretch=8)
@@ -129,14 +124,48 @@ class Assets_tab(QWidget):
 
         #--- --- ---
 
-        self.reset_view_button = QPushButton(text='Reset view')
+        self.reset_view_button = QPushButton(text='Refresh view')
         self.reset_view_button.clicked.connect(self.update_listview)
         self.buttons_layout.addWidget(self.reset_view_button,1,2)
         
+        #--- --- ---
+
+        self.set_file_as_favorite_button = QPushButton('Set file as favorite')
+        self.set_file_as_favorite_button.clicked.connect(self.set_file_as_favorite)
+        self.buttons_layout.addWidget(self.set_file_as_favorite_button)
+
+        self.copy_file_to_dekstop_button = QPushButton('Copy file to dekstop')
+        self.copy_file_to_dekstop_button.clicked.connect(self.copy_file_to_dekstop)
+        self.buttons_layout.addWidget(self.copy_file_to_dekstop_button)
 
         self.asset_tab_layout.setStretch(0, 3) 
         self.asset_tab_layout.setStretch(1,7)
 
+    def copy_file_to_dekstop(self):
+
+        index = self.files_view.currentIndex()
+        item = self.files_view_model.itemFromIndex(index)
+        file = item.text()
+        asset_type = self.active_asset_subtab.get_asset_type()
+        response = requests.get(f'{global_variables.base_url}/get_path_of_file/{asset_type}/{file}')
+        results = response.json()
+
+        desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop') 
+        destination = os.path.join(desktop, os.path.basename(results))
+
+        shutil.copy(results, destination)
+
+    def set_file_as_favorite(self):
+        index = self.files_view.currentIndex()
+        item = self.files_view_model.itemFromIndex(index)
+        file = item.text()
+        asset_type = self.active_asset_subtab.get_asset_type()
+        response = requests.get(f'{global_variables.base_url}/get_path_of_file/{asset_type}/{file}')
+        results = response.json()
+        set_as_favorite(results)
+
+    def on_display(self):
+        pass
 
     def publish_selection(self):
         dialog = QDialog()
@@ -199,8 +228,9 @@ class Assets_tab(QWidget):
         asset_type = self.active_asset_subtab.get_asset_type()
         response = requests.get(f'{global_variables.base_url}/get_path_of_file/{asset_type}/{file}')
         results = response.json()
-
+        update_recently_opened(results)
         os.startfile(results)
+
        
 
     def create_software_file(self,software,extension):
@@ -388,6 +418,7 @@ class Maya_tab(QWidget):
         self.department_button_group = QButtonGroup()
         self.department_button_group.setExclusive(True)
         self.department_buttons_box = QGroupBox()
+        self.department_buttons_box.setStyleSheet("QGroupBox { border: none; }")
         self.department_buttons_box_layout = QGridLayout()
         self.department_buttons_box.setLayout(self.department_buttons_box_layout)
         self.Maya_subtab_layout.addWidget(self.department_buttons_box)
@@ -411,9 +442,27 @@ class Maya_tab(QWidget):
 
         #--- --- ---
 
+        '''self.open_department_folder_button = QPushButton('Open department folder')
+        self.open_department_folder_button.clicked.connect(self.open_department_folder)
+        self.Maya_subtab_layout.addWidget(self.open_department_folder_button)'''
+
+        self.department_group = QGroupBox()
+        self.department_group.setStyleSheet("QGroupBox { border: none; }")
+        self.Maya_subtab_layout.addWidget(self.department_group)
+
+
+        department_layout = QHBoxLayout()
+
         self.open_department_folder_button = QPushButton('Open department folder')
         self.open_department_folder_button.clicked.connect(self.open_department_folder)
-        self.Maya_subtab_layout.addWidget(self.open_department_folder_button)
+        department_layout.addWidget(self.open_department_folder_button, stretch=8)  # 80% of space
+
+        '''self.set_department_favorite_button = QPushButton('Set as favorite')
+        #self.set_favorite_button.clicked.connect(self.set_as_favorite)
+        department_layout.addWidget(self.set_department_favorite_button, stretch=2)  # 20% of space
+        '''
+        # Apply the layout to the group box
+        self.department_group.setLayout(department_layout)
 
         #--- --- ---
 
@@ -421,37 +470,48 @@ class Maya_tab(QWidget):
 
         self.status_button_group = QButtonGroup()
         self.status_button_group.setExclusive(True)
+
         self.status_buttons_box = QGroupBox()
-        self.status_buttons_box_layout = QGridLayout()
-        self.status_buttons_box.setLayout(self.status_buttons_box_layout)
+        self.status_buttons_layout = QHBoxLayout()
+        self.status_buttons_box.setLayout(self.status_buttons_layout)
         self.Maya_subtab_layout.addWidget(self.status_buttons_box)
 
         self.status_buttons = {}
-        loop_counter = 0
-        grid_row = 0
         for status in status_list:
-            if loop_counter % 4 == 0:
-                grid_row += 1
-                loop_counter = 0
             self.status_buttons[status] = QPushButton(status)
             self.status_buttons[status].setCheckable(True)
             self.status_buttons[status].setStyleSheet("QPushButton:checked { background-color: #5288B2; }")
             self.status_button_group.addButton(self.status_buttons[status])                 
-            self.status_buttons_box_layout.addWidget(self.status_buttons[status],grid_row,loop_counter)
-            loop_counter += 1
+            self.status_buttons_layout.addWidget(self.status_buttons[status], stretch=8)  # Each button gets equal space
+
+        # Set the first button as checked
         self.status_buttons[status_list[0]].setChecked(True)
+
+        # Add "Set as Favorite" button with 20% width
+        self.set_status_favorite_button = QPushButton('Set as favorite') 
+        self.set_status_favorite_button.clicked.connect(self.set_status_as_favorite)
+        self.status_buttons_layout.addWidget(self.set_status_favorite_button, stretch=2)
+
 
         self.department_button_group.buttonClicked.connect(self.parent_class.update_listview)
         self.status_button_group.buttonClicked.connect(self.parent_class.update_listview)
     
-
+    
     def open_software(self):
         software_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software 
+        update_recently_opened(software_folder)
         os.startfile(software_folder)
+    
+
         
     def open_department_folder(self):
         department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes \\' + self.get_status() + '\\' + self.get_department()
+        update_recently_opened(department_folder)
         os.startfile(department_folder)
+    
+    def set_status_as_favorite(self):
+        department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes \\' + self.get_status() + '\\' + self.get_department()
+        set_as_favorite(department_folder)
 
     def get_software(self):
         return self.software
@@ -517,11 +577,15 @@ class Houdini_tab(QWidget):
 
     def open_software(self):
         software_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software 
+        update_recently_opened(software_folder)
         os.startfile(software_folder)
+        
         
     def open_department_folder(self):
         department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\' + self.get_department()
+        update_recently_opened(department_folder)
         os.startfile(department_folder)
+        
 
     def get_software(self):
         return self.software
@@ -537,39 +601,6 @@ class Houdini_tab(QWidget):
         department_checked_button = self.department_button_group.checkedButton().text()
         return self.software + '\\' + department_checked_button
         
-
-
-
-    
-
-    def refresh_view(self):
-        '''
-        we query the names of all the assets in the publish table and populate the model 
-        with the assets ready to be reviewed and then published
-        '''
-
-        self.list_view_model.clear()
-
-        #--- --- ---
-        response = requests.get(f'{global_variables.base_url}/refresh_publish_view')
-        results = response.json()
-
-        #--- --- ---
-
-        for element in results:
-            item = QStandardItem(element[0])
-            self.list_view_model.appendRow(item)
-
-
-    def delete_selection(self):
-        '''
-        deletes an item from the publish database
-        '''
-
-        index = self.list_view.currentIndex()
-        item = self.list_view_model.itemFromIndex(index)
-        selection = item.text()
-        requests.delete(f'{global_variables.base_url}/delete_selection_from_publish/{selection}')
 
 
 class Assets_subtab(QWidget):
@@ -606,14 +637,22 @@ class Assets_subtab(QWidget):
         
         self.assets_list_view.doubleClicked.connect(self.open_asset_folder)
 
+
+        self.refresh_assets_button = QPushButton('refresh assets')
+        self.refresh_assets_button.clicked.connect(self.set_list_view_assets)
+        self.listview_layout.addWidget(self.refresh_assets_button)
+
         self.create_folder_asset_button = QPushButton('create new asset')
         self.create_folder_asset_button.clicked.connect(self.create_folder_asset)
         self.listview_layout.addWidget(self.create_folder_asset_button)
 
+        self.rename_asset_button = QPushButton('rename asset')
+        self.rename_asset_button.clicked.connect(self.rename_asset)
+        self.listview_layout.addWidget(self.rename_asset_button)
+
         self.model = QStandardItemModel()
         self.assets_list_view.setModel(self.model)
         self.set_list_view_assets()
-
 
     def get_asset_type(self):
         return self.asset_type
@@ -629,6 +668,71 @@ class Assets_subtab(QWidget):
         
         return self.asset_type + '\\' + self.asset_selection
     
+    def rename_asset(self):
+        if not self.asset_selection:
+            return
+        dialog = QDialog()
+        dialog.setWindowTitle('Rename asset')
+
+        layout = QVBoxLayout()
+        dialog.setLayout(layout)
+
+        tooltip_label = QLabel('replace what is in current name by what is in new name.')
+        layout.addWidget(tooltip_label)
+
+        current_name_label = QLabel('Current name:')
+        layout.addWidget(current_name_label )
+
+        current_name_edit = QLineEdit()
+        current_name_edit.setText(self.asset_selection)
+        layout.addWidget(current_name_edit)
+
+        new_name_label = QLabel('New name:')
+        layout.addWidget(new_name_label )
+
+        new_name_edit = QLineEdit()
+        layout.addWidget(new_name_edit)
+
+        OK_button = QPushButton('Replace')
+        layout.addWidget(OK_button)
+        OK_button.clicked.connect(dialog.accept)
+
+        Cancel_button = QPushButton('Cancel')
+        layout.addWidget(Cancel_button)
+        Cancel_button.clicked.connect(dialog.reject)
+
+
+        if dialog.exec() == 1:
+            asset_folder = global_variables.pipeline_path + '\\04_asset' + '\\' + self.asset_type + '\\'  +self.asset_selection
+            all_files = os.walk(asset_folder)
+            old_name = current_name_edit.text()
+            new_name = new_name_edit.text()
+
+            if not new_name:
+                QMessageBox.warning(None,'Error','Please write down the new name.')
+                return
+            
+            for dirpath, dirnames, filenames in all_files:
+                
+                for dir_name in dirnames:
+                    old_path = os.path.join(dirpath, dir_name)
+                    new_path = os.path.join(dirpath, dir_name.replace(old_name, new_name))
+
+                    if old_name in dir_name and not os.path.exists(new_path):
+                        os.rename(old_path, new_path)
+
+                for file_name in filenames:
+                    old_path = os.path.join(dirpath, file_name)
+                    new_path = os.path.join(dirpath, file_name.replace(old_name, new_name))
+
+                    if old_name in file_name and not os.path.exists(new_path):
+                        os.rename(old_path, new_path)
+
+            time.sleep(2)
+            self.update_list_view()
+        else:
+            return
+        
     def create_folder_asset(self):
         dialog = QDialog()
         dialog.setWindowTitle('New asset name')
@@ -660,8 +764,10 @@ class Assets_subtab(QWidget):
         
     
     def open_asset_folder(self):
-        os.startfile(global_variables.pipeline_path + '\\04_asset' + '\\' + self.asset_type + '\\'  +self.asset_selection)
-
+        asset_folder = global_variables.pipeline_path + '\\04_asset' + '\\' + self.asset_type + '\\'  +self.asset_selection
+        update_recently_opened(asset_folder)
+        os.startfile(asset_folder)
+        
 
     def set_asset_selection(self):
         
@@ -876,8 +982,9 @@ class Status_subtab(QWidget):
         response = requests.get(f'{global_variables.base_url}/get_path_of_file/{self.asset_type}/{file}')
         results = response.json()
 
+        update_recently_opened(results)
         os.startfile(results)
-
+        
 
     def set_model_data_from_search(self):
         '''
@@ -958,7 +1065,7 @@ print('putain x2')
 
 
 '''
-            
+
             temp_file_name = f'temp_file_drop_{uuid.uuid4()}.py'
             temp_file_path = global_variables.fool_path + '\\temp\\' + temp_file_name 
             temp_file_path = temp_file_path.replace('\\','/')
@@ -974,4 +1081,5 @@ print('putain x2')
 
             file_path = Path(temp_file_path)
             file_path.unlink()
+
 

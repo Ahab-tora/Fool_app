@@ -1,18 +1,28 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLineEdit, QTableView,QTabWidget,QWidget,QCompleter
-from PySide6.QtCore import QStringListModel
+#--- --- Imports
+
+#--- PySide6 imports
+from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLineEdit, QTableView,QTabWidget,QWidget,QCompleter,QMessageBox
+from PySide6.QtCore import QStringListModel,Qt
 from PySide6.QtGui import QCursor,QPixmap
 
+#--- Standart library imports
 import sys
+import requests
 import sqlite3
 
+#--- data imports
 import data
 from data import global_variables
 
-
+#--- modules imports
 from modules.treeview_tab import Treeview
 from modules.welcome_tab import Welcome
 from modules.ftrack_tab import Ftrack_tab
 from modules.assets_tab import Assets_tab
+from modules.tools_tab import Tools_tab
+
+#--- versions
+current_version = 1.23022025
 
 class Fool (QMainWindow):
 
@@ -29,8 +39,8 @@ class Fool (QMainWindow):
 
         #we call the tabs
         
-        '''self.welcome_tab = Welcome()
-        self.tab_widget.addTab(self.welcome_tab,'welcome tab')'''
+        self.welcome_tab = Welcome()
+        self.tab_widget.addTab(self.welcome_tab,'welcome tab')
 
         '''self.treeview_tab = Treeview(root_path=global_variables.root_path,table_path= global_variables.tables_path + '\\treeview_table.db')
         self.tab_widget.addTab(self.treeview_tab,'treeview tab')'''
@@ -38,14 +48,20 @@ class Fool (QMainWindow):
         self.ftrack_tab = Ftrack_tab()
         self.tab_widget.addTab(self.ftrack_tab,'ftrack tab')
 
+        
         self.assets_tab = Assets_tab()
         self.tab_widget.addTab(self.assets_tab,'Assets tab')
 
+        self.tools_tab = Tools_tab()
+        self.tab_widget.addTab(self.tools_tab,'Tools tab')
+
+        self.loaded_tab = self.welcome_tab
+        self.tab_widget.currentChanged.connect(self.tab_change)
+        
 
         cursor_path = QPixmap(global_variables.fool_path + '\\icons\\pointer_gauntlet.png')
         self.gauntlet_cursor = QCursor(cursor_path,0,0)
         self.setCursor(self.gauntlet_cursor)
-
 
         dark_stylesheet = """
         QMainWindow {
@@ -106,12 +122,55 @@ class Fool (QMainWindow):
         }
         """
         self.setStyleSheet(dark_stylesheet)
+
+    def tab_change(self):
         
+        current_tab = self.tab_widget.currentWidget()
+        self.loaded_tab = current_tab
+        self.loaded_tab.on_display()
+
+
+def checking_server():
+    #try to ping
+    #if it does not work, message error and return
+    #compare versions
+    #if the other version is newer, update
+    def checking_connection():
+        try:
+            response = requests.get(f'{global_variables.base_url}/ping')
+            results = response.json()
+            print(results)
+            
+        except:
+            QMessageBox.critical(None, "Error", f'Could not connect to the server')
+            sys.exit()
+
+    def checking_updates():
+        response = requests.get(f'{global_variables.base_url}/version')
+        server_version = response.json()
+        print(server_version)
+        if server_version > current_version:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle("Error")
+            msg_box.setText('An update is available! Please download it <a href="https://github.com/Ahab-tora/Fool_app/tree/main">here</a> and replace the existing one.')
+            msg_box.setTextFormat(Qt.TextFormat.RichText) 
+            msg_box.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)  
+            msg_box.exec()
+
+    checking_connection()
+    checking_updates()
+
+
+    
+
+
 
 if __name__ == '__main__':
     print('ah')
     app = QApplication(sys.argv)
     print('ah')
+    checking_server()
     window = Fool()
     print('ah')
     window.show()

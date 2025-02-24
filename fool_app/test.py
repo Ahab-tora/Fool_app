@@ -53,14 +53,30 @@ class TestTab (QWidget):
         else:
             print('no')
 
+
+import os
+all_files = os.walk(r'C:\Users\laure\OneDrive\Bureau\sauvegarde1')
+oldName = 'anat'
+newName = 'caiman'
+
+for dirpath, dirnames, filenames in all_files:
     
-            
+    for dir_name in dirnames:
+        old_path = os.path.join(dirpath, dir_name)
+        new_path = os.path.join(dirpath, dir_name.replace(oldName, newName))
 
+        if oldName in dir_name and not os.path.exists(new_path):
+            os.rename(old_path, new_path)
 
+    for file_name in filenames:
+        old_path = os.path.join(dirpath, file_name)
+        new_path = os.path.join(dirpath, file_name.replace(oldName, newName))
 
+        if oldName in file_name and not os.path.exists(new_path):
+            os.rename(old_path, new_path)
 
-app = QApplication(sys.argv)
+'''app = QApplication(sys.argv)
 window = TestTab()
 window.show()
-app.exec()
+app.exec()'''
 

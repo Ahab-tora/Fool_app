@@ -1,11 +1,10 @@
 #--- --- Imports
 
 #--- PySide6 imports
-from PySide6.QtWidgets import QWidget,QListWidget,QVBoxLayout,QPushButton,QLabel
+from PySide6.QtWidgets import QWidget,QListWidget,QVBoxLayout,QPushButton,QLabel,QMessageBox,QGroupBox
 
 #---
-import ftrack_api
-
+import ftrack_api,os,json
 #---
 
 import data
@@ -14,51 +13,83 @@ from data import global_variables
 api_key = 'YWUwZGY2MGEtYjA4NS00NzcyLThjYzItNTk4NTJkODQ5MWNiOjo2YjZkNjA0Ni00NDZmLTQ4YTctODU3Yy0zNzQ2MDc0M2FmNTk'
 
 
-def connect_close_ftrack(func):
-    def wrapper(*args,**kwargs):
-
-        session = ftrack_api.Session(
-        server_url=global_variables.server_url,
-        api_key=api_key,
-        api_user=global_variables.api_user,)
-
-        executed_function = func(*args,session=session,**kwargs)
-        
-        session.close()
-
-        return executed_function
-    
-    return wrapper
-
 class Welcome(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.loaded = False
+
         self.welcome_tab_layout = QVBoxLayout()
         self.setLayout(self.welcome_tab_layout)
 
-        #self.notes_QTextEdit = QTextEdit()
+        self.open_pipeline_button = QPushButton('Open Pipeline')
+        self.open_pipeline_button.clicked.connect(self.open_pipeline)
+        self.welcome_tab_layout.addWidget(self.open_pipeline_button)
 
+        # --- Recent Files ---
+        self.recent_files_group = QGroupBox("Recent Files")
+        recent_files_layout = QVBoxLayout()
+        
         self.recent_files_QListWidget = QListWidget()
+        self.recent_files_QListWidget.itemDoubleClicked.connect(self.open_selected_file)
+        self.set_recent_files()
+        self.refresh_recent_files = QPushButton("Refresh recent files")
+        self.refresh_recent_files.clicked.connect(self.set_recent_files)
+
+        recent_files_layout.addWidget(self.recent_files_QListWidget)
+        recent_files_layout.addWidget(self.refresh_recent_files)
+
+        self.recent_files_group.setLayout(recent_files_layout)
+        self.welcome_tab_layout.addWidget(self.recent_files_group)
+
+        # --- Favorite Files ---
+        self.favorite_files_group = QGroupBox("Favorite Files")
+        favorite_files_layout = QVBoxLayout()
 
         self.favorite_files_QListWidget = QListWidget()
+        self.favorite_files_QListWidget.itemDoubleClicked.connect(self.open_selected_file)
+        self.set_favorites_files()
+        self.refresh_favorite_files = QPushButton("Refresh favorite files")
+        self.refresh_favorite_files.clicked.connect(self.set_favorites_files)
+        self.delete_favorite_button = QPushButton('Delete favorite')
+        self.delete_favorite_button.clicked.connect(self.delete_favorite)
+
+        favorite_files_layout.addWidget(self.favorite_files_QListWidget)
+        favorite_files_layout.addWidget(self.refresh_favorite_files)
+        favorite_files_layout.addWidget(self.delete_favorite_button)
+
+        self.favorite_files_group.setLayout(favorite_files_layout)
+        self.welcome_tab_layout.addWidget(self.favorite_files_group)
+
+        # --- Assigned Tasks ---
+        self.tasks_group = QGroupBox("Assigned Tasks")
+        tasks_layout = QVBoxLayout()
 
         self.due_tasks_QListWidget = QListWidget()
+        self.refresh_due_tasks = QPushButton("Refresh tasks")
+        self.refresh_due_tasks.clicked.connect(lambda: self.set_due_tasks(manage_connection=True))
 
-        self.due_task_QLabel = QLabel('Assigned tasks:')
+        tasks_layout.addWidget(self.due_tasks_QListWidget)
+        tasks_layout.addWidget(self.refresh_due_tasks)
 
-        self.reset_due_tasks = QPushButton('refresh tasks')
-        self.reset_due_tasks.clicked.connect(self.set_due_tasks(manage_connection=True))
-
-        #self.welcome_tab_layout.addWidget(self.notes_QTextEdit)
-        self.welcome_tab_layout.addWidget(self.recent_files_QListWidget)
-        self.welcome_tab_layout.addWidget(self.favorite_files_QListWidget)
-        self.welcome_tab_layout.addWidget(self.due_task_QLabel)
-        self.welcome_tab_layout.addWidget(self.due_tasks_QListWidget)
-        self.welcome_tab_layout.addWidget(self.reset_due_tasks)
+        self.tasks_group.setLayout(tasks_layout)
+        self.welcome_tab_layout.addWidget(self.tasks_group)
 
         self.set_due_tasks(manage_connection=True)
 
+    def on_display(self):
+        self.set_favorites_files()
+        self.set_recent_files()
+
+    def open_selected_file(self, item):
+        file_path = item.text()
+        if os.path.exists(file_path):
+            os.startfile(file_path)  # Windows
+        else:
+            print(f"File not found: {file_path}")
+            
+    def open_pipeline(self):
+        os.startfile(global_variables.pipeline_path)
 
     def set_due_tasks(self,manage_connection,session=None):
         print('launch set_due_tasks')
@@ -117,33 +148,51 @@ class Welcome(QWidget):
 
         return next_due_tasks,sorted_keys
 
-    def write_notes(self):
-        pass
-
-    def set_notes(self):
-        pass
-
-    def set_favorites(self):
-        #clear 
-        #query the data from the dict
-        #add to the list
-        pass
+    def set_favorites_files(self):
+        '''
+        add the favorite files to the favorite files QlistWidget
+        '''
+        self.favorite_files_QListWidget.clear()
+        try:
+            with open(global_variables.fool_path + '\\data\\files_data.json', "r") as file:
+                data = json.load(file)
+            self.favorite_files_QListWidget.addItems(data["favorites"])
+        except:
+            QMessageBox.critical(None, "Error", f"Failed to load files_data_json")
 
     def set_recent_files(self):
-        #clear 
-        #query the data from the dict
-        #add to the list
-        pass
+        '''
+        add the recent files to the recent files QlistWidget
+        '''
+        self.recent_files_QListWidget.clear()
+        try:
+            with open(global_variables.fool_path + '\\data\\files_data.json', "r") as file:
+                data = json.load(file)
+            self.recent_files_QListWidget.addItems(data["recent"])
+        except:
+            QMessageBox.critical(None, "Error", f"Failed to load files_data_json")
     
     def open_file(self):
         #get path
         #startfile
         pass
-#when opened from treeview or
+    #when opened from treeview or
 
-def set_has_favorite(self):
-    #open json as write
-    #if more than x element(10?)
-    #pop first element
-    #append to end 
-    pass
+    def delete_favorite(self):
+        to_remove = self.favorite_files_QListWidget.currentItem().text()
+        print(to_remove)
+        if not to_remove:
+            return
+        
+        try:
+            with open(global_variables.fool_path + '\\data\\files_data.json', "r") as file:
+                data = json.load(file)
+
+            data["favorites"].remove(to_remove)
+
+            with open(global_variables.fool_path + '\\data\\files_data.json', "w") as file:
+                json.dump(data, file, indent=4)
+            self.set_favorites_files()
+        except:
+            self.set_favorites_files()
+            QMessageBox.critical(None, "Error", f'error while removing favorite')
