@@ -21,7 +21,10 @@ tables_path = 'D:\\code\\Fool_v3_versions\\Fool_v3_15.01.25\\fool_server\\data\\
 assets_path = '\\04_asset'
 sequences_path = '\\06_shot'
 
+version = '1.0.25022025'
+
 #--- --- Ftrack data
+
 server_url = 'https://esma-lyon.ftrackapp.com'
 project_name = 'END'
 project_users = 'Leriche','Chalmet','Kidangan','Maestracci','VANDERWEYEN','Guinet--Elmi','Kumar','Hatef','NGUYEN'

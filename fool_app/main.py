@@ -21,8 +21,8 @@ from modules.ftrack_tab import Ftrack_tab
 from modules.assets_tab import Assets_tab
 from modules.tools_tab import Tools_tab
 
-#--- versions
-current_version = 1.23022025
+
+
 
 class Fool (QMainWindow):
 
@@ -148,8 +148,8 @@ def checking_server():
     def checking_updates():
         response = requests.get(f'{global_variables.base_url}/version')
         server_version = response.json()
-        print(server_version)
-        if server_version > current_version:
+        
+        if not server_version == global_variables.version:
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle("Error")
