@@ -9,7 +9,7 @@ import os
 
 #--- --- Paths
 
-base_url = "http://192.168.56.1:8000/END"
+base_url = "http://10.69.240.231:8000/END"
 
 
 
@@ -18,7 +18,7 @@ fool_path =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 pipeline_path = '\\\\Storage\\esma\\3D4\\threeLittlePigs'
 root_path = pipeline_path
 tables_path = 'D:\\code\\Fool_v3_versions\\Fool_v3_15.01.25\\fool_server\\data\\END_data\\files_db'
-assets_path = '\\04_assets'
+assets_path = '\\04_asset'
 sequences_path = '\\06_shot'
 
 #--- --- Ftrack data

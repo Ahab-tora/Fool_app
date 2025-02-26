@@ -84,7 +84,7 @@ class Welcome(QWidget):
     def open_selected_file(self, item):
         file_path = item.text()
         if os.path.exists(file_path):
-            os.startfile(file_path)  # Windows
+            os.startfile(file_path) 
         else:
             print(f"File not found: {file_path}")
             

@@ -3,7 +3,7 @@
 
 #--- PySide6 imports
 from PySide6.QtWidgets import QCheckBox,QButtonGroup,QRadioButton,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QDialogButtonBox,QDialog,QLabel,QTableView,QHeaderView
-from PySide6.QtWidgets import  QGridLayout, QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy
+from PySide6.QtWidgets import  QGridLayout, QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy,QSplitter
 from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag
 from PySide6.QtCore import Qt,QMimeData,QUrl
 
@@ -29,16 +29,22 @@ class Assets_tab(QWidget):
 
         self.loaded = False
 
-        self.asset_tab_layout = QHBoxLayout()
-        self.setLayout(self.asset_tab_layout)
+        self.asset_tab_layout = QHBoxLayout(self)
+        #self.setLayout(self.asset_tab_layout)
 
         self.assets_tab_widget = QTabWidget()
         self.asset_tab_layout.addWidget(self.assets_tab_widget)
         self.assets_tab_widget.currentChanged.connect(self.asset_subtab_changed)
-        self.asset_tab_sublayout = QVBoxLayout()
+
+        self.asset_tab_container = QWidget()
+        self.asset_tab_sublayout = QVBoxLayout(self.asset_tab_container)
         self.asset_tab_layout.addLayout(self.asset_tab_sublayout)
 
-
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter.addWidget(self.assets_tab_widget)
+        self.splitter.addWidget(self.asset_tab_container)
+        self.asset_tab_layout.addWidget(self.splitter)
+        #--- --- ---
 
         response = requests.get(f'{global_variables.base_url}/get_assets_types')
         asset_types = response.json()
@@ -59,8 +65,8 @@ class Assets_tab(QWidget):
         #self.software_tab_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.software_tab_widget.setMaximumHeight(260)
 
-        self.Maya_tab = Maya_tab(parent=self)
-        self.software_tab_widget.addTab(self.Maya_tab,'Maya')
+        self.maya_tab = maya_tab(parent=self)
+        self.software_tab_widget.addTab(self.maya_tab,'maya')
 
 
         self.Houdini_tab = Houdini_tab(parent=self)
@@ -141,6 +147,8 @@ class Assets_tab(QWidget):
         self.asset_tab_layout.setStretch(0, 3) 
         self.asset_tab_layout.setStretch(1,7)
 
+    #--- --- ---
+
     def copy_file_to_dekstop(self):
 
         index = self.files_view.currentIndex()
@@ -155,6 +163,8 @@ class Assets_tab(QWidget):
 
         shutil.copy(results, destination)
 
+    #--- --- ---
+
     def set_file_as_favorite(self):
         index = self.files_view.currentIndex()
         item = self.files_view_model.itemFromIndex(index)
@@ -164,8 +174,12 @@ class Assets_tab(QWidget):
         results = response.json()
         set_as_favorite(results)
 
+    #--- --- ---
+
     def on_display(self):
         pass
+
+    #--- --- ---
 
     def publish_selection(self):
         dialog = QDialog()
@@ -220,6 +234,7 @@ class Assets_tab(QWidget):
         else:
             return
     
+    #--- --- ---
 
     def open_file(self):
         index = self.files_view.currentIndex()
@@ -231,7 +246,7 @@ class Assets_tab(QWidget):
         update_recently_opened(results)
         os.startfile(results)
 
-       
+    #--- --- ---
 
     def create_software_file(self,software,extension):
 
@@ -274,12 +289,12 @@ class Assets_tab(QWidget):
             department = self.active_software_tab.get_department()
            
 
-            if self.software == 'houdini':
+            if self.active_software_tab.software == 'houdini':
 
                 new_file_path = assets_path + '\\' + asset_type + '\\' +  asset_name + '\\' +  software + '\\' +  department + '\\' + new_file_name + extension
 
 
-            if self.software == 'maya':
+            if self.active_software_tab.software == 'maya':
                 status = self.active_software_tab.get_status()
                 new_file_path = assets_path + '\\' + asset_type + '\\' +  asset_name + '\\' +  software +'\\scenes' + '\\' +  status + '\\' + department + '\\' + new_file_name + extension
 
@@ -289,6 +304,7 @@ class Assets_tab(QWidget):
         else:
             return
         
+    #--- --- ---
 
     def asset_subtab_changed(self):
         self.active_asset_subtab = self.assets_tab_widget.currentWidget()
@@ -296,7 +312,8 @@ class Assets_tab(QWidget):
             return
         self.update_listview()
 
-    
+    #--- --- ---
+
     def software_tab_changed(self):
         self.active_software_tab = self.software_tab_widget.currentWidget()
         if not self.active_software_tab:
@@ -304,14 +321,12 @@ class Assets_tab(QWidget):
         self.update_listview()
         print(self.active_software_tab.get_path())
     
+    #--- --- ---
 
     def update_listview_from_search(self):
         self.active_software_tab = self.software_tab_widget.currentWidget()
         if not self.active_software_tab:
             return
-        print('--- --- ---')
-        print(self.active_software_tab.get_path())
-        print(self.active_asset_subtab.get_path())
 
         asset_type = self.active_asset_subtab.get_asset_type()
         asset_name = self.active_asset_subtab.get_asset_selection()
@@ -340,21 +355,15 @@ class Assets_tab(QWidget):
         self.files_view.resizeColumnsToContents()
         self.files_view.horizontalHeader().setStretchLastSection(True)
 
+    #--- --- ---
 
     def update_listview(self):
         self.active_software_tab = self.software_tab_widget.currentWidget()
         if not self.active_software_tab:
             return
-        print('--- --- ---')
-
-        print(self.active_software_tab.get_path())
-        print(self.active_asset_subtab.get_path())
 
         asset_type = self.active_asset_subtab.get_asset_type()
         asset_name = self.active_asset_subtab.get_asset_selection()
-        
-        print(asset_name)
-        print(self.active_asset_subtab)
 
         department = self.active_software_tab.get_department()
         status = self.active_software_tab.get_status()
@@ -380,38 +389,33 @@ class Assets_tab(QWidget):
         self.files_view.resizeColumnsToContents()
 
 
-class Maya_tab(QWidget):
+class maya_tab(QWidget):
     def __init__(self,parent):
         super().__init__()
         self.parent_class = parent
-        self.software = 'Maya'
+        self.software = 'maya'
 
-        self.Maya_subtab_layout = QVBoxLayout()
-        self.setLayout(self.Maya_subtab_layout)
+        self.maya_subtab_layout = QVBoxLayout()
+        self.setLayout(self.maya_subtab_layout)
 
-        self.setStyleSheet("""
-            QRadioButton {
-                font-size: 15px;
-                font-weight: bold;
-                spacing: 8px;
-            }
-            QRadioButton::indicator {
-                width: 13px;
-                height: 12px;
-                border: 2px solid #444;
-                border-radius: 10px;
-                background: white;
-            }
-            QRadioButton::indicator:checked {
-                background: #0078d7;
-                border: 2px solid #0078d7;
-            }
-        """)
+        #--- --- ---
+
+        self.open_buttons_group = QGroupBox()
+        #self.open_buttons_group.setStyleSheet("QGroupBox { border: none; }")
+        self.maya_subtab_layout.addWidget(self.open_buttons_group)
+
+        self.open_buttons_layout = QHBoxLayout()
+        self.open_buttons_group.setLayout(self.open_buttons_layout)
 
         self.open_software_folder_button = QPushButton('Open maya folder')
         self.open_software_folder_button.clicked.connect(self.open_software)
-        self.Maya_subtab_layout.addWidget(self.open_software_folder_button)
+        self.open_buttons_layout.addWidget(self.open_software_folder_button, stretch=5) 
 
+        self.open_department_folder_button = QPushButton('Open department folder')
+        self.open_department_folder_button.clicked.connect(self.open_department_folder)
+        self.open_buttons_layout.addWidget(self.open_department_folder_button, stretch=5) 
+        
+        #--- --- ---
 
         departments_list = 'assetLayout','cloth','dressing','groom','lookdev','modeling','rig','sculpt'
 
@@ -421,7 +425,7 @@ class Maya_tab(QWidget):
         self.department_buttons_box.setStyleSheet("QGroupBox { border: none; }")
         self.department_buttons_box_layout = QGridLayout()
         self.department_buttons_box.setLayout(self.department_buttons_box_layout)
-        self.Maya_subtab_layout.addWidget(self.department_buttons_box)
+        self.maya_subtab_layout.addWidget(self.department_buttons_box)
 
         #--- --- ---
 
@@ -442,30 +446,6 @@ class Maya_tab(QWidget):
 
         #--- --- ---
 
-        '''self.open_department_folder_button = QPushButton('Open department folder')
-        self.open_department_folder_button.clicked.connect(self.open_department_folder)
-        self.Maya_subtab_layout.addWidget(self.open_department_folder_button)'''
-
-        self.department_group = QGroupBox()
-        self.department_group.setStyleSheet("QGroupBox { border: none; }")
-        self.Maya_subtab_layout.addWidget(self.department_group)
-
-
-        department_layout = QHBoxLayout()
-
-        self.open_department_folder_button = QPushButton('Open department folder')
-        self.open_department_folder_button.clicked.connect(self.open_department_folder)
-        department_layout.addWidget(self.open_department_folder_button, stretch=8)  # 80% of space
-
-        '''self.set_department_favorite_button = QPushButton('Set as favorite')
-        #self.set_favorite_button.clicked.connect(self.set_as_favorite)
-        department_layout.addWidget(self.set_department_favorite_button, stretch=2)  # 20% of space
-        '''
-        # Apply the layout to the group box
-        self.department_group.setLayout(department_layout)
-
-        #--- --- ---
-
         status_list = 'edit','publish'
 
         self.status_button_group = QButtonGroup()
@@ -474,7 +454,7 @@ class Maya_tab(QWidget):
         self.status_buttons_box = QGroupBox()
         self.status_buttons_layout = QHBoxLayout()
         self.status_buttons_box.setLayout(self.status_buttons_layout)
-        self.Maya_subtab_layout.addWidget(self.status_buttons_box)
+        self.maya_subtab_layout.addWidget(self.status_buttons_box)
 
         self.status_buttons = {}
         for status in status_list:
@@ -505,12 +485,12 @@ class Maya_tab(QWidget):
 
         
     def open_department_folder(self):
-        department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes \\' + self.get_status() + '\\' + self.get_department()
+        department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes\\' + self.get_status() + '\\' + self.get_department()
         update_recently_opened(department_folder)
         os.startfile(department_folder)
     
     def set_status_as_favorite(self):
-        department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes \\' + self.get_status() + '\\' + self.get_department()
+        department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes\\' + self.get_status() + '\\' + self.get_department()
         set_as_favorite(department_folder)
 
     def get_software(self):
@@ -703,7 +683,7 @@ class Assets_subtab(QWidget):
 
 
         if dialog.exec() == 1:
-            asset_folder = global_variables.pipeline_path + '\\04_asset' + '\\' + self.asset_type + '\\'  +self.asset_selection
+            asset_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.asset_type + '\\'  +self.asset_selection
             all_files = os.walk(asset_folder)
             old_name = current_name_edit.text()
             new_name = new_name_edit.text()
@@ -757,14 +737,14 @@ class Assets_subtab(QWidget):
 
         if dialog.exec() == 1:
             asset_name = name_query_edit.text()
-            shutil.copytree(src=global_variables.pipeline_path+'\\04_asset\\template\\_template_workspace_asset',dst=global_variables.pipeline_path+'\\04_asset'+ '\\' + self.asset_type + '\\' + asset_name)
+            shutil.copytree(src=global_variables.pipeline_path+'\\04_asset\\template\\_template_workspace_asset',dst=global_variables.pipeline_path+global_variables.assets_path+ '\\' + self.asset_type + '\\' + asset_name)
             self.update_list_view()
         else:
             return
         
     
     def open_asset_folder(self):
-        asset_folder = global_variables.pipeline_path + '\\04_asset' + '\\' + self.asset_type + '\\'  +self.asset_selection
+        asset_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.asset_type + '\\'  +self.asset_selection
         update_recently_opened(asset_folder)
         os.startfile(asset_folder)
         
@@ -842,7 +822,7 @@ class Status_subtab(QWidget):
         
         self.asset_subtab.assets_list_view.clicked.connect(self.set_model_data)
         self.asset_subtab.asset_subtab_tab_widget.currentChanged.connect(self.set_model_data)
-        #parent.Maya_department_subtab_tab_widget.currentChanged.connect(self.set_model_data)
+        #parent.maya_department_subtab_tab_widget.currentChanged.connect(self.set_model_data)
 
         self.files_list_view.doubleClicked.connect(self.open_file)
         
