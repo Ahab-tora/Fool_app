@@ -19,9 +19,11 @@ from data import global_variables
 from .utilities import update_recently_opened,set_as_favorite
 
 #--- --- --- ---#
+response = requests.get(f'{global_variables.base_url}/get_assets_path')
+assets_path = response.json()
 
-#types are character,item,prop or set
-
+response = requests.get(f'{global_variables.base_url}/get_asset_template_path')
+asset_template_path = response.json()
 
 class Assets_tab(QWidget):
     def __init__(self):
@@ -391,7 +393,9 @@ class Assets_tab(QWidget):
 
 class maya_tab(QWidget):
     def __init__(self,parent):
+        '''Constructor for maya tab'''
         super().__init__()
+
         self.parent_class = parent
         self.software = 'maya'
 
@@ -407,9 +411,9 @@ class maya_tab(QWidget):
         self.open_buttons_layout = QHBoxLayout()
         self.open_buttons_group.setLayout(self.open_buttons_layout)
 
-        self.open_software_folder_button = QPushButton('Open maya folder')
-        self.open_software_folder_button.clicked.connect(self.open_software)
-        self.open_buttons_layout.addWidget(self.open_software_folder_button, stretch=5) 
+        self.open_software_folder_folder_button = QPushButton('Open maya folder')
+        self.open_software_folder_folder_button.clicked.connect(self.open_software_folder)
+        self.open_buttons_layout.addWidget(self.open_software_folder_folder_button, stretch=5) 
 
         self.open_department_folder_button = QPushButton('Open department folder')
         self.open_department_folder_button.clicked.connect(self.open_department_folder)
@@ -462,12 +466,12 @@ class maya_tab(QWidget):
             self.status_buttons[status].setCheckable(True)
             self.status_buttons[status].setStyleSheet("QPushButton:checked { background-color: #5288B2; }")
             self.status_button_group.addButton(self.status_buttons[status])                 
-            self.status_buttons_layout.addWidget(self.status_buttons[status], stretch=8)  # Each button gets equal space
+            self.status_buttons_layout.addWidget(self.status_buttons[status], stretch=8)  
 
-        # Set the first button as checked
+        #sets the first button as checked
         self.status_buttons[status_list[0]].setChecked(True)
 
-        # Add "Set as Favorite" button with 20% width
+        #adds "Set as Favorite" button with 20% width
         self.set_status_favorite_button = QPushButton('Set as favorite') 
         self.set_status_favorite_button.clicked.connect(self.set_status_as_favorite)
         self.status_buttons_layout.addWidget(self.set_status_favorite_button, stretch=2)
@@ -476,35 +480,54 @@ class maya_tab(QWidget):
         self.department_button_group.buttonClicked.connect(self.parent_class.update_listview)
         self.status_button_group.buttonClicked.connect(self.parent_class.update_listview)
     
-    
-    def open_software(self):
-        software_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software 
+    #--- --- ---
+
+    def open_software_folder(self):
+        '''opens the software folder'''
+
+        software_folder = assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software 
         update_recently_opened(software_folder)
         os.startfile(software_folder)
     
-
+    #--- --- ---
         
     def open_department_folder(self):
-        department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes\\' + self.get_status() + '\\' + self.get_department()
+        '''opens the department folder'''
+        department_folder = assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes\\' + self.get_status() + '\\' + self.get_department()
         update_recently_opened(department_folder)
         os.startfile(department_folder)
     
+    #--- --- ---
+
     def set_status_as_favorite(self):
-        department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes\\' + self.get_status() + '\\' + self.get_department()
+        '''sets the department/status to favorite'''
+        department_folder = assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\scenes\\' + self.get_status() + '\\' + self.get_department()
         set_as_favorite(department_folder)
 
+    #--- --- ---
+
     def get_software(self):
+        '''returns the software'''
         return self.software
     
+    #--- --- ---
+
     def get_status(self):
+        '''returns the current status'''
         status_checked_button = self.status_button_group.checkedButton().text()
         return status_checked_button
 
+    #--- --- ---
+        
     def get_department(self):
+        '''returns the current department'''
         department_checked_button = self.department_button_group.checkedButton().text()
         return department_checked_button
 
+    #--- --- ---
+
     def get_path(self):
+        '''returns the path software\scenes\status\department'''
         department_checked_button = self.department_button_group.checkedButton().text()
         status_checked_button = self.status_button_group.checkedButton().text()
         return self.software + '\\scenes\\' + status_checked_button + '\\' + department_checked_button
@@ -518,9 +541,9 @@ class Houdini_tab(QWidget):
         self.Houdini_subtab_layout = QVBoxLayout()
         self.setLayout(self.Houdini_subtab_layout)
 
-        self.open_software_folder_button = QPushButton('Open houdini folder')
-        self.open_software_folder_button.clicked.connect(self.open_software)
-        self.Houdini_subtab_layout.addWidget(self.open_software_folder_button)
+        self.open_software_folder_folder_button = QPushButton('Open houdini folder')
+        self.open_software_folder_folder_button.clicked.connect(self.open_software_folder)
+        self.Houdini_subtab_layout.addWidget(self.open_software_folder_folder_button)
 
 
         departments_list = 'abc','audio','comp','desk','flip','geo','hdz','render','scripts','sim','tex','video'
@@ -555,14 +578,14 @@ class Houdini_tab(QWidget):
         self.department_button_group.buttonClicked.connect(self.parent_class.update_listview)
         self.department_button_group.buttonClicked.connect(self.parent_class.update_listview)
 
-    def open_software(self):
-        software_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software 
+    def open_software_folder(self):
+        software_folder = assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software 
         update_recently_opened(software_folder)
         os.startfile(software_folder)
         
         
     def open_department_folder(self):
-        department_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\' + self.get_department()
+        department_folder = assets_path + '\\' + self.parent_class.active_asset_subtab.get_path() + '\\' + self.software + '\\' + self.get_department()
         update_recently_opened(department_folder)
         os.startfile(department_folder)
         
@@ -683,7 +706,7 @@ class Assets_subtab(QWidget):
 
 
         if dialog.exec() == 1:
-            asset_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.asset_type + '\\'  +self.asset_selection
+            asset_folder = assets_path + '\\' + self.asset_type + '\\'  +self.asset_selection
             all_files = os.walk(asset_folder)
             old_name = current_name_edit.text()
             new_name = new_name_edit.text()
@@ -737,14 +760,14 @@ class Assets_subtab(QWidget):
 
         if dialog.exec() == 1:
             asset_name = name_query_edit.text()
-            shutil.copytree(src=global_variables.pipeline_path+'\\04_asset\\template\\_template_workspace_asset',dst=global_variables.pipeline_path+global_variables.assets_path+ '\\' + self.asset_type + '\\' + asset_name)
+            shutil.copytree(src=asset_template_path,dst=assets_path+ '\\' + self.asset_type + '\\' + asset_name)
             self.update_list_view()
         else:
             return
         
     
     def open_asset_folder(self):
-        asset_folder = global_variables.pipeline_path + global_variables.assets_path + '\\' + self.asset_type + '\\'  +self.asset_selection
+        asset_folder = assets_path + '\\' + self.asset_type + '\\'  +self.asset_selection
         update_recently_opened(asset_folder)
         os.startfile(asset_folder)
         

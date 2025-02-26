@@ -7,7 +7,7 @@ from PySide6.QtGui import QFont,QColor
 from PySide6.QtCore import QModelIndex,Qt,QAbstractItemModel
 
 #--- Standart library imports
-import ftrack_api,logging,shutil
+import ftrack_api,logging,shutil,requests
 from pathlib import Path
 import pprint
 
@@ -23,13 +23,16 @@ from data import global_variables
 
 
 #--- --- Ftrack variables
-api_key = 'YWUwZGY2MGEtYjA4NS00NzcyLThjYzItNTk4NTJkODQ5MWNiOjo2YjZkNjA0Ni00NDZmLTQ4YTctODU3Yy0zNzQ2MDc0M2FmNTk'
-
 types_list = ['production','R&d','Compositing','rendering','storyboard','lookdev','scenario','grading','setDressing','reference','rigging','editing','animation','Lighting','PAO','design','Generic','layout','CFX','FX','modeling']
-#status_ftrack_list = 'WIP','Not started','-','INV','R&D','RETAKE','Pending Review','REVIEW_team','REVIEW_sup','TO_RENDER','ON HOLD','BUG','APPROVED','DONE','OUT'
 
-api_user = 'e.guinet-elmi@lyn.ecolescreatives.com'
-api_key = 'YWUwZGY2MGEtYjA4NS00NzcyLThjYzItNTk4NTJkODQ5MWNiOjo2YjZkNjA0Ni00NDZmLTQ4YTctODU3Yy0zNzQ2MDc0M2FmNTk'
+response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
+pipeline_path = response.json()
+
+response = requests.get(f'{global_variables.base_url}/get_api_key')
+api_key = response.json()
+
+api_user = global_variables.api_user
+
 session = ftrack_api.Session(
 server_url=global_variables.server_url,
 api_key=api_key,
