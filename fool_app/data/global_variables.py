@@ -1,5 +1,3 @@
-#use UNC path 
-
 #use 2 forward slashes for paths and 4 if it's a storage for the first one
 #example : 'C:\\user\\path' , '\\\\Storage\\path'
 
@@ -9,23 +7,13 @@ import os
 
 #--- --- Paths
 
-base_url = "http://10.69.240.231:8000/END"
-
-
-
+base_url = "http://10.69.240.231:8000/OS"
 fool_path =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-'''pipeline_path = '\\\\Storage\\esma\\3D4\\threeLittlePigs'''
-#root_path = pipeline_path
-#assets_path = '\\04_asset'
-#sequences_path = '\\06_shot'
+#--- --- Ftrack data
+api_user = 'e.guinet-elmi@lyn.ecolescreatives.com'
 
+#--- --- Version
 version = '1.0.25022025'
 
-#--- --- Ftrack data
-
-'''server_url = 'https://esma-lyon.ftrackapp.com'
-project_name = 'END'
-project_users = 'Leriche','Chalmet','Kidangan','Maestracci','VANDERWEYEN','Guinet--Elmi','Kumar','Hatef','NGUYEN'''
-api_user = 'e.guinet-elmi@lyn.ecolescreatives.com'
 
