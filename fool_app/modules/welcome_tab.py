@@ -4,14 +4,23 @@
 from PySide6.QtWidgets import QWidget,QListWidget,QVBoxLayout,QPushButton,QLabel,QMessageBox,QGroupBox
 
 #---
-import ftrack_api,os,json
+import ftrack_api,os,json,requests
 #---
 
 import data
 from data import global_variables
 
-api_key = 'YWUwZGY2MGEtYjA4NS00NzcyLThjYzItNTk4NTJkODQ5MWNiOjo2YjZkNjA0Ni00NDZmLTQ4YTctODU3Yy0zNzQ2MDc0M2FmNTk'
+response = requests.get(f'{global_variables.base_url}/get_api_key')
+api_key = response.json()
 
+response = requests.get(f'{global_variables.base_url}/get_ftrack_server_url')
+ftrack_server_url = response.json()
+
+response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
+pipeline_path = response.json()
+
+fool_path = global_variables.fool_path
+api_user = global_variables.api_user
 
 class Welcome(QWidget):
     def __init__(self):
@@ -89,7 +98,7 @@ class Welcome(QWidget):
             print(f"File not found: {file_path}")
             
     def open_pipeline(self):
-        os.startfile(global_variables.pipeline_path)
+        os.startfile(pipeline_path)
 
     def set_due_tasks(self,manage_connection,session=None):
         print('launch set_due_tasks')
@@ -117,9 +126,9 @@ class Welcome(QWidget):
         opens ftrack session
         '''
         session = ftrack_api.Session(
-        server_url=global_variables.server_url,
+        server_url=ftrack_server_url,
         api_key=api_key,
-        api_user=global_variables.api_user,)
+        api_user=api_user,)
         return session
 
 
@@ -135,7 +144,7 @@ class Welcome(QWidget):
         Query all the tasks of the user that are not done and have a due date then adds the data to a dict
         the dict is sorted by due date and contains the name, the due date, and the status of the task
         '''
-        user_tasks = session.query(f"Task where assignments.resource.email is '{global_variables.api_user}' and status.name != DONE and end_date != None").all()
+        user_tasks = session.query(f"Task where assignments.resource.email is '{api_user}' and status.name != DONE and end_date != None").all()
 
         next_due_tasks = {}
         #iterates through the dict and compare the dict[key]['end_date'] to current end_date
@@ -154,7 +163,7 @@ class Welcome(QWidget):
         '''
         self.favorite_files_QListWidget.clear()
         try:
-            with open(global_variables.fool_path + '\\data\\files_data.json', "r") as file:
+            with open(fool_path + '\\data\\files_data.json', "r") as file:
                 data = json.load(file)
             self.favorite_files_QListWidget.addItems(data["favorites"])
         except:
@@ -166,7 +175,7 @@ class Welcome(QWidget):
         '''
         self.recent_files_QListWidget.clear()
         try:
-            with open(global_variables.fool_path + '\\data\\files_data.json', "r") as file:
+            with open(fool_path + '\\data\\files_data.json', "r") as file:
                 data = json.load(file)
             self.recent_files_QListWidget.addItems(data["recent"])
         except:
@@ -185,12 +194,12 @@ class Welcome(QWidget):
             return
         
         try:
-            with open(global_variables.fool_path + '\\data\\files_data.json', "r") as file:
+            with open(fool_path + '\\data\\files_data.json', "r") as file:
                 data = json.load(file)
 
             data["favorites"].remove(to_remove)
 
-            with open(global_variables.fool_path + '\\data\\files_data.json', "w") as file:
+            with open(fool_path + '\\data\\files_data.json', "w") as file:
                 json.dump(data, file, indent=4)
             self.set_favorites_files()
         except:

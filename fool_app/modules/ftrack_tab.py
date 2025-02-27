@@ -25,18 +25,30 @@ from data import global_variables
 #--- --- Ftrack variables
 types_list = ['production','R&d','Compositing','rendering','storyboard','lookdev','scenario','grading','setDressing','reference','rigging','editing','animation','Lighting','PAO','design','Generic','layout','CFX','FX','modeling']
 
+api_user = global_variables.api_user
+
 response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
 pipeline_path = response.json()
 
 response = requests.get(f'{global_variables.base_url}/get_api_key')
 api_key = response.json()
 
-api_user = global_variables.api_user
+response = requests.get(f'{global_variables.base_url}/get_project_name')
+project_name = response.json()
+
+response = requests.get(f'{global_variables.base_url}/get_ftrack_server_url')
+ftrack_server_url = response.json()
+
+response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
+pipeline_path = response.json()
+
+response = requests.get(f'{global_variables.base_url}/get_project_users')
+project_users = response.json()
 
 session = ftrack_api.Session(
-server_url=global_variables.server_url,
+server_url=ftrack_server_url,
 api_key=api_key,
-api_user=global_variables.api_user,)
+api_user=api_user,)
 
 status_query = session.query('Status').all()
 status_ftrack_list  = []
@@ -120,7 +132,7 @@ class Main_subtab(QWidget):
 
             parent_family = session.query(f'''Family where name is {pipeline_type}
                                     and parent.name is 05_asset
-                                    and project.name is {global_variables.project_name}''').one()
+                                    and project.name is {project_name}''').one()
             assets = session.query(f'''Asset_ where parent.id is {parent_family['id']}''').all()
             
             for asset in assets:
@@ -128,7 +140,7 @@ class Main_subtab(QWidget):
             
             #--- --- --- --- ---
 
-            folder_path = Path(global_variables.pipeline_path + '\\' + pipeline_type)
+            folder_path = Path(pipeline_path + '\\' + pipeline_type)
 
             for asset in folder_path.iterdir():
                 data_dict[pipeline_type]['pipeline'].append(str(asset).split('\\')[-1])
@@ -204,7 +216,7 @@ class Asset_type_subsubtab(QWidget):
         props_status_delegate = ComboBoxDelegate(model=self.model,data_type ='status' ,itemlist=status_ftrack_list)
         self.treeview_wgt.setItemDelegateForColumn(2, props_status_delegate)
 
-        props_assignee_delegate = ComboBoxDelegate(model=self.model,data_type='assignee',itemlist=global_variables.project_users)
+        props_assignee_delegate = ComboBoxDelegate(model=self.model,data_type='assignee',itemlist=project_users)
         self.treeview_wgt.setItemDelegateForColumn(4, props_assignee_delegate)
 
         #--- --- ---
@@ -277,7 +289,7 @@ class Asset_type_subsubtab(QWidget):
 
         asset_name = self.query_asset_name.text()
 
-        shutil.copytree(src=global_variables.pipeline_path+'\\04_asset\\template\\_template_workspace_asset',dst=global_variables.pipeline_path+'\\04_asset'+ '\\' + asset_type + '\\' + asset_name)
+        shutil.copytree(src=pipeline_path+'\\04_asset\\template\\_template_workspace_asset',dst=pipeline_path+'\\04_asset'+ '\\' + asset_type + '\\' + asset_name)
 
 
     def create_asset_global(self):
@@ -342,7 +354,7 @@ class Asset_type_subsubtab(QWidget):
         if manage_connection is True:
             session = open_ftrack_session()
 
-        assets = session.query(f'''Asset_ where parent.name is {type} and project.name is {global_variables.project_name} ''').all()
+        assets = session.query(f'''Asset_ where parent.name is {type} and project.name is {project_name} ''').all()
         
         assets_dict = {}
 
@@ -420,9 +432,9 @@ def open_ftrack_session():
      opens ftrack session
     '''
     session = ftrack_api.Session(
-    server_url=global_variables.server_url,
+    server_url=ftrack_server_url,
     api_key=api_key,
-    api_user=global_variables.api_user,)
+    api_user=api_user,)
 
     return session
 
@@ -496,7 +508,7 @@ def change_ftrack_data(task_name,parent_name,data_type,data):
     
     session = open_ftrack_session()
     
-    task = session.query(f'''Task where  project.name is {global_variables.project_name}
+    task = session.query(f'''Task where  project.name is {project_name}
                          and parent.name is {parent_name}
                          and name is {task_name}
                          
@@ -721,7 +733,7 @@ class TreeModel(QAbstractItemModel):
             
             family_name = 'character' if self.asset_type == 'chars' else 'item' if self.asset_type == 'item' else 'prop' if self.asset_type == 'prop' else 'set' if self.asset_type == 'set' else None
             
-            assets = session.query(f'''Asset_ where project.name is {global_variables.project_name}
+            assets = session.query(f'''Asset_ where project.name is {project_name}
                                    and parent.parent.name is {folder_name}
                                     and  parent.name is {family_name}
                                     ''').all()
@@ -738,7 +750,7 @@ class TreeModel(QAbstractItemModel):
             
         if parent_item.type == self.asset_type:
 
-            tasks = session.query(f'''Task where project.name is {global_variables.project_name}
+            tasks = session.query(f'''Task where project.name is {project_name}
                                     and  parent.id is {parent_item.ftrack_id}''').all()
             data_dict = {}
             for task in tasks:
@@ -850,7 +862,7 @@ def create_asset_ftrack(manage_connection:bool,asset_name:str,asset_type:str,ses
 
     parent_family = session.query(f'''Family where name is {family_name}
                                   and parent.name is 05_asset
-                                  and project.name is {global_variables.project_name}''').one()
+                                  and project.name is {project_name}''').one()
     
     asset_type = session.query(f'Type where name is {asset_type}').one()
 
@@ -877,7 +889,7 @@ def create_task(manage_connection:bool,task_name:str,task_type:str,parent,sessio
 
     task_type = session.query(f"Type where name is {task_type}").one()
 
-    parent_asset = session.query(f'''Asset_ where project.name is {global_variables.project_name}
+    parent_asset = session.query(f'''Asset_ where project.name is {project_name}
                                  and parent.parent.name is 05_asset
                                  and name is {parent}''').first()
     

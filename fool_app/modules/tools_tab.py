@@ -19,8 +19,10 @@ from data import global_variables
 
 #--- --- --- ---#
 
-#types are character,item,prop or set
+response = requests.get(f'{global_variables.base_url}/get_team_tools_path')
+team_tools_path = response.json()
 
+fool_path = global_variables.fool_path
 
 class Tools_tab(QWidget):
     def __init__(self):
@@ -79,12 +81,12 @@ class Tools_tab(QWidget):
             scripts = []
             scenes = []
 
-            for element in os.listdir(global_variables.fool_path +'\\tools'):
+            for element in os.listdir(fool_path +'\\tools'):
                 
                 if element.endswith('.py') or element.endswith('.mel'):
-                    scripts.append(global_variables.fool_path +'\\tools\\'+element)
+                    scripts.append(fool_path +'\\tools\\'+element)
                 if element.endswith('.ma') or element.endswith('.mb'):
-                    scenes.append(global_variables.fool_path +'\\tools\\'+element)
+                    scenes.append(fool_path +'\\tools\\'+element)
 
             i = 0
             script_buttons_instances = {}
@@ -114,7 +116,7 @@ class Tools_tab(QWidget):
                 if item.widget():  
                     item.widget().deleteLater()
 
-            if not os.path.exists(global_variables.pipeline_path +'\\tools'):
+            if not os.path.exists(team_tools_path):
                 not_found_label = QLabel('Tools folder not found on the pipeline')
                 self.team_tools_layout.addWidget(not_found_label,0,0)
                 return
@@ -122,12 +124,12 @@ class Tools_tab(QWidget):
             scripts = []
             scenes = []
 
-            for element in os.listdir(global_variables.pipeline_path +'\\tools'):
+            for element in os.listdir(team_tools_path):
                 
                 if element.endswith('.py') or element.endswith('.mel'):
-                    scripts.append(global_variables.fool_path +'\\tools\\'+element)
+                    scripts.append(fool_path +'\\tools\\'+element)
                 if element.endswith('.ma') or element.endswith('.mb'):
-                    scenes.append(global_variables.fool_path +'\\tools\\'+element)
+                    scenes.append(fool_path +'\\tools\\'+element)
 
             i = 0
             script_buttons_instances = {}
@@ -154,14 +156,13 @@ class Tools_tab(QWidget):
         set_team_tools()
 
     def open_my_tools(self):
-        pass
+        os.startfile(fool_path+'\\tools')
 
     def open_team_tools(self):
-        pass
+        os.startfile(team_tools_path)
     
     def dragEnterEvent(self, e):
         e.accept()
-
 
 class Drop_reference_button(QPushButton):
     '''
@@ -204,7 +205,7 @@ print('putain x2')
 '''
             
             temp_file_name = f'temp_file_drop_{uuid.uuid4()}.py'
-            temp_file_path = global_variables.fool_path + '\\temp\\' + temp_file_name 
+            temp_file_path = fool_path + '\\temp\\' + temp_file_name 
             temp_file_path = temp_file_path.replace('\\','/')
 
 
@@ -254,7 +255,7 @@ def onMayaDroppedPythonFile(*args):
     exec('''{script_content}''')
 """
             temp_file_name = f'temp_file_drop_{uuid.uuid4()}.py'
-            temp_file_path = global_variables.fool_path + '\\temp\\' + temp_file_name 
+            temp_file_path = fool_path + '\\temp\\' + temp_file_name 
             temp_file_path = temp_file_path.replace('\\','/')
 
 

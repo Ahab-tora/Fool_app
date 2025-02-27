@@ -19,11 +19,18 @@ from data import global_variables
 from .utilities import update_recently_opened,set_as_favorite
 
 #--- --- --- ---#
-response = requests.get(f'{global_variables.base_url}/get_assets_path')
+
+base_url = global_variables.base_url
+
+fool_path = global_variables.fool_path 
+
+response = requests.get(f'{base_url}/get_assets_path')
 assets_path = response.json()
 
-response = requests.get(f'{global_variables.base_url}/get_asset_template_path')
+response = requests.get(f'{base_url}/get_asset_template_path')
 asset_template_path = response.json()
+
+
 
 class Assets_tab(QWidget):
     def __init__(self):
@@ -48,7 +55,7 @@ class Assets_tab(QWidget):
         self.asset_tab_layout.addWidget(self.splitter)
         #--- --- ---
 
-        response = requests.get(f'{global_variables.base_url}/get_assets_types')
+        response = requests.get(f'{base_url}/get_assets_types')
         asset_types = response.json()
 
 
@@ -157,7 +164,7 @@ class Assets_tab(QWidget):
         item = self.files_view_model.itemFromIndex(index)
         file = item.text()
         asset_type = self.active_asset_subtab.get_asset_type()
-        response = requests.get(f'{global_variables.base_url}/get_path_of_file/{asset_type}/{file}')
+        response = requests.get(f'{base_url}/get_path_of_file/{asset_type}/{file}')
         results = response.json()
 
         desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop') 
@@ -172,7 +179,7 @@ class Assets_tab(QWidget):
         item = self.files_view_model.itemFromIndex(index)
         file = item.text()
         asset_type = self.active_asset_subtab.get_asset_type()
-        response = requests.get(f'{global_variables.base_url}/get_path_of_file/{asset_type}/{file}')
+        response = requests.get(f'{base_url}/get_path_of_file/{asset_type}/{file}')
         results = response.json()
         set_as_favorite(results)
 
@@ -219,7 +226,7 @@ class Assets_tab(QWidget):
             file = item.text()
 
             asset_type = self.active_asset_subtab.get_asset_type()
-            response = requests.get(f'{global_variables.base_url}/get_path_of_file/{asset_type}/{file}')
+            response = requests.get(f'{base_url}/get_path_of_file/{asset_type}/{file}')
             file_path= response.json()
             extension = file_path.split('.')[-1]
 
@@ -243,7 +250,7 @@ class Assets_tab(QWidget):
         item = self.files_view_model.itemFromIndex(index)
         file = item.text()
         asset_type = self.active_asset_subtab.get_asset_type()
-        response = requests.get(f'{global_variables.base_url}/get_path_of_file/{asset_type}/{file}')
+        response = requests.get(f'{base_url}/get_path_of_file/{asset_type}/{file}')
         results = response.json()
         update_recently_opened(results)
         os.startfile(results)
@@ -277,7 +284,7 @@ class Assets_tab(QWidget):
 
         asset_name = self.active_asset_subtab.asset_selection
 
-        response = requests.get(f'{global_variables.base_url}/get_assets_path')
+        response = requests.get(f'{base_url}/get_assets_path')
         assets_path  = response.json()
 
         if dialog.exec() == 1:
@@ -342,7 +349,7 @@ class Assets_tab(QWidget):
         #self.files_view_model.clear()
         self.files_view_model.removeRows(0, self.files_view_model.rowCount())
         search = f"%{self.search_box.text()}%"
-        response = requests.get(f'{global_variables.base_url}/get_files_of_asset_search/{asset_type}/{asset_name}/{department}/{status}/{search}')
+        response = requests.get(f'{base_url}/get_files_of_asset_search/{asset_type}/{asset_name}/{department}/{status}/{search}')
         results = response.json()
 
         for result in results:
@@ -376,7 +383,7 @@ class Assets_tab(QWidget):
         #self.files_view_model.clear()
         self.files_view_model.removeRows(0, self.files_view_model.rowCount())
 
-        response = requests.get(f'{global_variables.base_url}/get_files_of_asset/{asset_type}/{asset_name}/{department}/{status}')
+        response = requests.get(f'{base_url}/get_files_of_asset/{asset_type}/{asset_name}/{department}/{status}')
         results = response.json()
 
         for result in results:
@@ -789,7 +796,7 @@ class Assets_subtab(QWidget):
             self.set_list_view_assets()
             return
 
-        response = requests.get(f'{global_variables.base_url}/get_assets_from_search/{self.asset_type}/{search}')
+        response = requests.get(f'{base_url}/get_assets_from_search/{self.asset_type}/{search}')
         results = response.json()
 
         for element in results:
@@ -801,223 +808,12 @@ class Assets_subtab(QWidget):
 
         self.model.clear()
 
-        response = requests.get(f'{global_variables.base_url}/get_assets/{self.asset_type}')
+        response = requests.get(f'{base_url}/get_assets/{self.asset_type}')
         results = response.json()
 
         for element in results:
             item = QStandardItem(element[0])
             self.model.appendRow(item)
-
-
-
-
-class Status_subtab(QWidget):
-    def __init__(self,status:str,asset_type:str,department:str,asset_subtab,software,parent):
-        super().__init__()
-        
-        #--- --- Variables
-        self.status = status
-        self.software = software
-        self.asset_type = asset_type
-        self.department = department
-        self.asset_subtab = asset_subtab
-
-        self.setAcceptDrops(True)
-        
-        #self.table_path = table_path
-
-        #--- --- Layout
-        self.status_layout = QVBoxLayout()
-        self.setLayout(self.status_layout)
-
-        #--- --- Search box
-        self.search_box = QLineEdit()
-        self.search_box.textChanged.connect(self.set_model_data_from_search)
-        self.status_layout.addWidget(self.search_box)
-        
-        #--- --- files list_view
-        self.files_list_view = QListView()
-        self.files_list_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.status_layout.addWidget(self.files_list_view)
-        
-        #--- ---  Item model
-        self.model = QStandardItemModel()
-        
-        self.asset_subtab.assets_list_view.clicked.connect(self.set_model_data)
-        self.asset_subtab.asset_subtab_tab_widget.currentChanged.connect(self.set_model_data)
-        #parent.maya_department_subtab_tab_widget.currentChanged.connect(self.set_model_data)
-
-        self.files_list_view.doubleClicked.connect(self.open_file)
-        
-        self.files_list_view.setModel(self.model)
-
-        #--- --- ---
-
-        self.buttons_group= QGroupBox()
-        self.buttons_layout= QGridLayout()
-        self.buttons_group.setLayout(self.buttons_layout)
-        self.status_layout.addWidget(self.buttons_group)
-
-        #--- --- ---
-
-        self.drop_as_reference_button = Drop_reference_button(text='Drop reference in maya',parent=self)
-        self.buttons_layout.addWidget(self.drop_as_reference_button,1,0)
-
-        if 'maya' == self.software:
-            self.drop_set_project_button = QPushButton('Drop set project')
-            self.buttons_layout.addWidget(self.drop_set_project_button,1,1)
-
-            self.set_for_review_button = QPushButton('Set for review')
-            self.set_for_review_button.clicked.connect(self.set_for_review)
-            self.buttons_layout.addWidget(self.set_for_review_button ,1,2)
-
-        #--- --- ---
-
-        softwares  =('maya','.ma'),('houdini','.hipnc'),('nuke','.nk')
-        self.set_software_scene_button = {}
-        for i,software in enumerate(softwares):
-            self.set_software_scene_button[software[0]] = QPushButton(f'Create {software[0]} scene')
-            self.buttons_layout.addWidget(self.set_software_scene_button[software[0]] ,0,i)
-            self.set_software_scene_button[software[0]].clicked.connect(lambda checked, s=software[0], e=software[1]: self.create_software_file(s, e))
-
-        #nuke,houdini,mari
-
-    def create_software_file(self,software,extension):
-
-        dialog = QDialog()
-        dialog.setWindowTitle('New file name')
-
-        #dialog.setWindowIcon(QDialog.Question)
-
-        layout = QVBoxLayout()
-        dialog.setLayout(layout)
-
-        label = QLabel('Please write down the name of the new file:')
-        layout.addWidget(label)
-
-        name_query_edit = QLineEdit()
-        layout.addWidget(name_query_edit)
-
-        OK_button = QPushButton('OK')
-        layout.addWidget(OK_button)
-        OK_button.clicked.connect(dialog.accept)
-
-        Cancel_button = QPushButton('Cancel')
-        layout.addWidget(Cancel_button)
-        Cancel_button.clicked.connect(dialog.reject)
-
-        asset_name = self.asset_subtab.asset_selection
-
-        response = requests.get(f'{global_variables.base_url}/get_assets_path')
-        assets_path  = response.json()
-
-        if dialog.exec() == 1:
-
-            new_file_name = name_query_edit.text()
-            if not new_file_name:
-                return
-            
-            if self.software == 'houdini':
-
-                new_file_path = assets_path + '\\' + self.asset_type + '\\' +  asset_name + '\\' +  self.software + '\\' +  self.department + '\\' + new_file_name + extension
-
-
-            if self.software == 'maya':
-                new_file_path = assets_path + '\\' + self.asset_type + '\\' +  asset_name + '\\' +  self.software +'\\scenes' + '\\' +  self.status + '\\' + self.department + '\\' + new_file_name + extension
-
-            file = open(new_file_path, 'a')
-            file.close()
-            self.set_model_data()
-        else:
-            return
-            
-
-    def dragEnterEvent(self, e):
-        e.accept()
-
-
-    def set_for_review(self):
-
-        table_path = global_variables.tables_path  +'\\'+ self.asset_type+'.db'
-
-        index = self.files_list_view.currentIndex()
-        item = self.model.itemFromIndex(index)
-        file = item.text()
-
-        requests.post(f'{global_variables.base_url}/set_for_review/{self.asset_type}/{file}')
-        
-
-    def set_model_data(self):
-        '''
-        set the model data for the given asset_type, asset_name,derpartment and status
-        '''
-
-        asset_name = self.asset_subtab.asset_selection
-        if not asset_name:
-            return
-        self.model.clear()
-
-        response = requests.get(f'{global_variables.base_url}/get_files_of_asset/{self.asset_type}/{asset_name}/{self.department}/{self.status}')
-        results = response.json()
-
-        x = 0
-
-        for element in results:
-            
-            item = QStandardItem(element[0])
-                
-            self.model.appendRow(item)
-
-            if x == 0:
-                x+=1
-                item = QStandardItem('--- --- --- ---')
-                self.model.appendRow(item)
-
-
-    def open_file(self):
-        '''
-        opens a file when double clicked
-        '''
-        index = self.files_list_view.currentIndex()
-        item = self.model.itemFromIndex(index)
-        file = item.text()
-
-        response = requests.get(f'{global_variables.base_url}/get_path_of_file/{self.asset_type}/{file}')
-        results = response.json()
-
-        update_recently_opened(results)
-        os.startfile(results)
-        
-
-    def set_model_data_from_search(self):
-        '''
-        set the model data for the given asset_type, asset_name,derpartment , status AND SEARCH
-        '''
-
-        self.model.clear()
-        search = f"%{self.search_box.text()}%"
-
-    
-        asset_name = self.asset_subtab.asset_selection
-        response = requests.get(f'{global_variables.base_url}/get_files_of_asset_search/{self.asset_type}/{asset_name}/{self.department}/{self.status}/{search}')
-        results = response.json()
-
-        if not results:
-            item = QStandardItem("Nothing here :(")
-            self.model.appendRow(item)
-
-        else:
-            x = 0
-            for element in results:
-                print(element)
-                item = QStandardItem(element[0])
-                print(item)
-                self.model.appendRow(item)
-
-                if x == 0:
-                    x+=1
-                    item = QStandardItem('--- --- --- ---')
-                    self.model.appendRow(item)
 
 
 class Drop_reference_button(QPushButton):
@@ -1049,7 +845,7 @@ class Drop_reference_button(QPushButton):
 
             #--- --- ---
 
-            response = requests.get(f'{global_variables.base_url}/get_file_path_for_reference_drop/{self.parent_widget.active_asset_subtab.get_asset_type()}/{file}')
+            response = requests.get(f'{base_url}/get_file_path_for_reference_drop/{self.parent_widget.active_asset_subtab.get_asset_type()}/{file}')
             file_path = response.json()
 
             file_path_formatted = file_path.replace('\\','//').replace('//','/')
@@ -1070,7 +866,7 @@ print('putain x2')
 '''
 
             temp_file_name = f'temp_file_drop_{uuid.uuid4()}.py'
-            temp_file_path = global_variables.fool_path + '\\temp\\' + temp_file_name 
+            temp_file_path = fool_path + '\\temp\\' + temp_file_name 
             temp_file_path = temp_file_path.replace('\\','/')
 
 

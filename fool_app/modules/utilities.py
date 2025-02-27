@@ -3,17 +3,20 @@ import json
 import data
 from data import global_variables
 from PySide6.QtWidgets import QMessageBox
+
+fool_path = global_variables.fool_path
+
 def update_recently_opened(path):
     print('updating')
     try:
 
-        with open(global_variables.fool_path + '\\data\\files_data.json', "r") as file:
+        with open(fool_path + '\\data\\files_data.json', "r") as file:
             data = json.load(file)
 
         data['recent'].insert(0,path)
         data['recent'] = data['recent'][:10]
 
-        with open(global_variables.fool_path + '\\data\\files_data.json', "w") as file:
+        with open(fool_path + '\\data\\files_data.json', "w") as file:
             json.dump(data, file, indent=4)
 
 
@@ -23,12 +26,12 @@ def update_recently_opened(path):
 
 def set_as_favorite(path):
     try:
-        with open(global_variables.fool_path + '\\data\\files_data.json', "r") as file:
+        with open(fool_path + '\\data\\files_data.json', "r") as file:
             data = json.load(file)
 
         data['favorites'].insert(0,path)
 
-        with open(global_variables.fool_path + '\\data\\files_data.json', "w") as file:
+        with open(fool_path + '\\data\\files_data.json', "w") as file:
             json.dump(data, file, indent=4)
 
 
