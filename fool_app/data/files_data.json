@@ -1,20 +1,21 @@
 {
     "favorites": [
+        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\guilt\\maya\\scenes\\publish\\rig\\guit_rig_publish.ma",
         "\\\\Storage\\esma\\3D4\\threeLittlePigs\\04_asset\\prop\\HL_CAR_MR_enveloppe\\maya\\scenes\\edit\\rig",
         "\\\\Storage\\esma\\3D4\\threeLittlePigs\\04_asset\\character\\Mirabella\\maya\\scenes\\publish\\rig",
         "\\\\Storage\\esma\\3D4\\threeLittlePigs\\04_asset\\character\\Lucia\\maya\\scenes\\publish\\rig",
         "\\\\Storage\\esma\\3D4\\threeLittlePigs\\04_asset\\character\\CHAR_Angelo\\maya\\scenes\\publish\\rig"
     ],
     "recent": [
-        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\set\\city_layout",
-        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\set\\city_layout\\maya",
-        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\crowdFit",
-        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\crowdFit\\maya",
-        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\crowdFit\\maya\\scenes\\edit\\modeling",
-        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\crowdCharacter_05\\maya",
-        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\crowdCharacter_05\\maya\\scenes\\publish\\sculpt",
-        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\prop\\shotGlass\\maya\\scenes\\publish\\modeling",
-        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\Jane\\maya\\scenes\\publish\\modeling",
-        "\\\\Storage\\esma\\3D4\\threeLittlePigs\\04_asset\\prop\\HL_CAR_MR_enveloppe\\maya\\scenes\\edit\\modeling"
+        "\\\\Storage\\esma\\3D4\\threeLittlePigs\\04_asset\\character\\CHAR_Angelo\\maya\\scenes\\edit\\rig",
+        "\\\\Storage\\esma\\3D4\\threeLittlePigs\\04_asset\\character\\Lucia\\maya\\scenes\\edit\\rig",
+        "\\\\Storage\\esma\\3D4\\threeLittlePigs\\04_asset\\character\\CHAR_Angelo\\Houdini",
+        "\\\\Storage\\esma\\3D4\\threeLittlePigs\\04_asset\\item\\EXT_tree_01\\Houdini",
+        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\guilt\\Houdini\\abc",
+        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\guilt\\Houdini",
+        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\guilt\\maya\\scenes\\edit\\modeling",
+        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\guilt\\maya",
+        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\character\\guilt",
+        "\\\\Storage01\\3D4\\orchidSquare\\04_asset\\item\\TRAUMASTREET"
     ]
 }

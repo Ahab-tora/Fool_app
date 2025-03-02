@@ -7,7 +7,7 @@ import os
 
 #--- --- Paths
 
-base_url = "http://10.69.240.231:8000/OS"
+base_url = "http://10.69.240.231:8000/END"
 fool_path =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 #--- --- Ftrack data

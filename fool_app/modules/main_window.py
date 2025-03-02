@@ -21,6 +21,7 @@ from .welcome_tab import Welcome
 from .ftrack_tab import Ftrack_tab
 from .assets_tab import Assets_tab
 from .tools_tab import Tools_tab
+from .sequences_tab import Sequences_tab
 
 class Fool (QMainWindow):
 
@@ -49,6 +50,9 @@ class Fool (QMainWindow):
         
         self.assets_tab = Assets_tab()
         self.tab_widget.addTab(self.assets_tab,'Assets tab')
+
+        self.sequences_tab = Sequences_tab()
+        self.tab_widget.addTab(self.sequences_tab,'Sequences tab')
 
         self.tools_tab = Tools_tab()
         self.tab_widget.addTab(self.tools_tab,'Tools tab')

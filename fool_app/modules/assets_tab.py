@@ -3,7 +3,7 @@
 
 #--- PySide6 imports
 from PySide6.QtWidgets import QCheckBox,QButtonGroup,QRadioButton,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QDialogButtonBox,QDialog,QLabel,QTableView,QHeaderView
-from PySide6.QtWidgets import  QGridLayout, QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy,QSplitter
+from PySide6.QtWidgets import  QGridLayout, QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy,QSplitter,QDockWidget
 from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag
 from PySide6.QtCore import Qt,QMimeData,QUrl
 
@@ -152,6 +152,9 @@ class Assets_tab(QWidget):
         self.copy_file_to_dekstop_button = QPushButton('Copy file to dekstop')
         self.copy_file_to_dekstop_button.clicked.connect(self.copy_file_to_dekstop)
         self.buttons_layout.addWidget(self.copy_file_to_dekstop_button)
+
+        self.drop_houdini_button = Drop_houdini_button(text='Drop houdini maya',parent=self)
+        self.buttons_layout.addWidget(self.drop_houdini_button)
 
         self.asset_tab_layout.setStretch(0, 3) 
         self.asset_tab_layout.setStretch(1,7)
@@ -814,6 +817,44 @@ class Assets_subtab(QWidget):
         for element in results:
             item = QStandardItem(element[0])
             self.model.appendRow(item)
+
+class Drop_houdini_button(QPushButton):
+    '''
+    A QPushButton allowing to drop references in a maya scene
+    '''
+    def __init__(self,text,parent):
+        super().__init__()
+
+        self.parent_widget= parent
+        self.setText(text)
+
+    def mouseMoveEvent(self, e):
+        if e.buttons() == Qt.MouseButton.LeftButton:
+
+
+            drag = QDrag(self)
+            mime = QMimeData()
+
+            #--- --- ---
+            index = self.parent_widget.files_view.currentIndex()
+            item = self.parent_widget.files_view_model.itemFromIndex(index)
+            file = item.text()
+            print(file)
+            #--- --- ---
+            if not file:
+                return
+
+
+            #--- --- --
+            
+            response = requests.get(f'{base_url}/get_file_path_for_reference_drop/{self.parent_widget.active_asset_subtab.get_asset_type()}/{file}')
+            file_path = response.json()
+
+            print(QUrl.fromLocalFile(file_path))
+            mime.setUrls([QUrl.fromLocalFile(file_path)])
+            drag.setMimeData(mime)
+            drag.exec()
+
 
 
 class Drop_reference_button(QPushButton):
