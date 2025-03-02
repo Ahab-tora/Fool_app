@@ -2,9 +2,65 @@ import sqlite3
 import json
 import data
 from data import global_variables
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox,QWidget,QHBoxLayout,QGroupBox,QGridLayout,QButtonGroup,QPushButton
 
 fool_path = global_variables.fool_path
+
+
+class Buttons_gridLayout(QWidget):
+    def __init__(self,
+                 mutually_exclusive:bool = True,
+                 buttonsPerRow:int = 5,
+                 borderVis:bool = True,
+                 boxName:str = 'Placeholder',
+                 checkable:bool = True,
+                 buttons:list = None,
+                 doubleClickConnect:list = None,
+                 clickConnect:list = None,
+                 ):
+        
+        super().__init__()
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+
+        self.box = QGroupBox(boxName)
+        self.boxLayout = QGridLayout()
+        self.box.setLayout(self.boxLayout)
+        layout.addWidget(self.box)
+
+        self.buttonsGroup = QButtonGroup(self)
+        self.buttonsGroup.setExclusive(mutually_exclusive)
+
+        self.buttonsDict = {}
+        loop_counter = 0
+        grid_row = 0
+        for button in buttons:
+            if loop_counter % buttonsPerRow == 0:
+                grid_row += 1
+                loop_counter = 0
+            self.buttonsDict[button] = QPushButton(button)
+            self.buttonsDict[button].setCheckable(checkable)
+            self.buttonsDict[button].setStyleSheet("QPushButton:checked { background-color: #5288B2; }")
+            self.buttonsGroup.addButton(self.buttonsDict[button])                 
+            self.boxLayout.addWidget(self.buttonsDict[button],grid_row,loop_counter)
+            loop_counter += 1
+
+            if checkable:
+                self.currentButton = None
+                self.buttonsGroup.buttonClicked.connect(self.setCurrentButton)
+
+            if doubleClickConnect:
+                for connection in doubleClickConnect:
+                    self.buttonsGroup.buttonClicked.connect(connection)
+            if clickConnect:
+                for connection in clickConnect:
+                    self.buttonsGroup.buttonClicked.connect(connection)
+
+    def setCurrentButton(self):
+        self.currentButton = self.buttonsGroup.checkedButton()
+
+    def currentButton(self):
+        return self.currentButton
 
 def update_recently_opened(path):
     print('updating')

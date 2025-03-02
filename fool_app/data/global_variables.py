@@ -7,7 +7,9 @@ import os
 
 #--- --- Paths
 
-base_url = "http://10.69.240.231:8000/END"
+base_url = "http://192.168.56.1:8000/END"
+sequences_url = base_url + '/sequences'
+assets_url = base_url + '/assets'
 fool_path =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 #--- --- Ftrack data

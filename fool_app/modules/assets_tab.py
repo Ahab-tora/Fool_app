@@ -855,8 +855,6 @@ class Drop_houdini_button(QPushButton):
             drag.setMimeData(mime)
             drag.exec()
 
-
-
 class Drop_reference_button(QPushButton):
     '''
     A QPushButton allowing to drop references in a maya scene
