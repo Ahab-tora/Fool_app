@@ -48,8 +48,8 @@ class Fool (QMainWindow):
         self.tab_widget.addTab(self.ftrack_tab,'ftrack tab')
 
         
-        '''self.assets_tab = Assets_tab()
-        self.tab_widget.addTab(self.assets_tab,'Assets tab')'''
+        self.assets_tab = Assets_tab()
+        self.tab_widget.addTab(self.assets_tab,'Assets tab')
 
         self.sequences_tab = Sequences_tab()
         self.tab_widget.addTab(self.sequences_tab,'Sequences tab')

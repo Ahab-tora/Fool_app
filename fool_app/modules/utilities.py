@@ -2,7 +2,8 @@ import sqlite3
 import json
 import data
 from data import global_variables
-from PySide6.QtWidgets import QMessageBox,QWidget,QHBoxLayout,QGroupBox,QGridLayout,QButtonGroup,QPushButton
+from PySide6.QtWidgets import QMessageBox,QWidget,QHBoxLayout,QGroupBox,QGridLayout,QButtonGroup,QPushButton,QSizePolicy
+from PySide6.QtGui import QFont
 
 fool_path = global_variables.fool_path
 
@@ -15,8 +16,11 @@ class Buttons_gridLayout(QWidget):
                  boxName:str = 'Placeholder',
                  checkable:bool = True,
                  buttons:list = None,
-                 doubleClickConnect:list = None,
                  clickConnect:list = None,
+                 maximumHeight:int = 1000,
+                 maximumWidth:int = 1000,
+                 font:str = 'Arial',
+                 fontSize:int = 12
                  ):
         
         super().__init__()
@@ -24,12 +28,17 @@ class Buttons_gridLayout(QWidget):
         self.setLayout(layout)
 
         self.box = QGroupBox(boxName)
+        self.box.setMaximumHeight(maximumHeight)
+        self.box.setMaximumWidth(maximumWidth)
         self.boxLayout = QGridLayout()
         self.box.setLayout(self.boxLayout)
         layout.addWidget(self.box)
 
         self.buttonsGroup = QButtonGroup(self)
         self.buttonsGroup.setExclusive(mutually_exclusive)
+
+
+        buttonsFont = QFont(font,fontSize)
 
         self.buttonsDict = {}
         loop_counter = 0
@@ -40,7 +49,12 @@ class Buttons_gridLayout(QWidget):
                 loop_counter = 0
             self.buttonsDict[button] = QPushButton(button)
             self.buttonsDict[button].setCheckable(checkable)
-            self.buttonsDict[button].setStyleSheet("QPushButton:checked { background-color: #5288B2; }")
+            self.buttonsDict[button].setStyleSheet(f"""
+            QPushButton:checked {{ background-color: #5288B2; }}
+            QPushButton {{ font-size: {fontSize}pt; }}
+            """)
+            #self.buttonsDict[button].setFont(buttonsFont)
+            self.buttonsDict[button].setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
             self.buttonsGroup.addButton(self.buttonsDict[button])                 
             self.boxLayout.addWidget(self.buttonsDict[button],grid_row,loop_counter)
             loop_counter += 1
@@ -49,13 +63,11 @@ class Buttons_gridLayout(QWidget):
                 self.currentButton = None
                 self.buttonsGroup.buttonClicked.connect(self.setCurrentButton)
 
-            if doubleClickConnect:
-                for connection in doubleClickConnect:
-                    self.buttonsGroup.buttonClicked.connect(connection)
             if clickConnect:
                 for connection in clickConnect:
                     self.buttonsGroup.buttonClicked.connect(connection)
-
+        self.updateGeometry()  
+        self.adjustSize()
     def setCurrentButton(self):
         self.currentButton = self.buttonsGroup.checkedButton()
 
@@ -63,6 +75,7 @@ class Buttons_gridLayout(QWidget):
         return self.currentButton
     
     def currentButtonName(self):
+        'returns the current button Name as a str'
         if self.currentButton:
             return self.currentButton.text()
         return None

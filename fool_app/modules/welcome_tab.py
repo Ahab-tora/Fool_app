@@ -166,8 +166,8 @@ class Welcome(QWidget):
             with open(fool_path + '\\data\\files_data.json', "r") as file:
                 data = json.load(file)
             self.favorite_files_QListWidget.addItems(data["favorites"])
-        except:
-            QMessageBox.critical(None, "Error", f"Failed to load files_data_json")
+        except Exception as e:
+            QMessageBox.critical(None, "Error", f"Failed to load files_data_json: {e}")
 
     def set_recent_files(self):
         '''
