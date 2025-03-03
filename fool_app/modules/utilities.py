@@ -61,6 +61,11 @@ class Buttons_gridLayout(QWidget):
 
     def currentButton(self):
         return self.currentButton
+    
+    def currentButtonName(self):
+        if self.currentButton:
+            return self.currentButton.text()
+        return None
 
 def update_recently_opened(path):
     print('updating')

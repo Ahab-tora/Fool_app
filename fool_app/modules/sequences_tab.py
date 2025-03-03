@@ -49,7 +49,7 @@ class Sequences_tab(QWidget):
         response = requests.get(url=f'{sequences_url}/get_sequences')
         sequences = response.json()
         #--- --- ---
-        self.sequencesButtons= Buttons_gridLayout(mutually_exclusive=True,buttonsPerRow=6,borderVis=False,boxName='Sequences',checkable=True,
+        self.sequencesButtons = Buttons_gridLayout(mutually_exclusive=True,buttonsPerRow=6,borderVis=False,boxName='Sequences',checkable=True,
                                              buttons=sequences,clickConnect=[self.update_shots_view])
         self.left_sublayout.addWidget(self.sequencesButtons)
 
@@ -62,10 +62,10 @@ class Sequences_tab(QWidget):
 
 
 
-        self.maya_tab = Software_subtab(software='maya',status_buttons=sequences_status,departments_buttons=sequences_maya_departments)
+        self.maya_tab = Software_subtab(software='maya',sequence=self.sequencesButtons,shot=self.shots_view,status_buttons=sequences_status,departments_buttons=sequences_maya_departments)
         self.tabWiget.addTab(self.maya_tab,'Maya tab')
 
-        self.houdini_tab = Software_subtab(software='houdini',status_buttons=[],departments_buttons=sequences_houdini_departments)
+        self.houdini_tab = Software_subtab(software='houdini',sequence=self.sequencesButtons,shot=self.shots_view,status_buttons=[],departments_buttons=sequences_houdini_departments)
         self.tabWiget.addTab(self.houdini_tab,'Houdini tab')
         
         
@@ -143,6 +143,7 @@ class Shots_widget(QWidget):
         item = self.model.itemFromIndex(index)
         self.shot_selection = item.text()
 
+
     def open_shot(self):
         'opens the selected shot'
         response = requests.get(f'{global_variables.sequences_url}/get_shot_path/{self.parent_class.sequencesButtons.currentButton.text()}/{self.shot_selection}')
@@ -153,36 +154,125 @@ class Shots_widget(QWidget):
 
 class Software_subtab(QWidget):
     def __init__(self,
+                 sequence,
+                 shot,
                  software:str = 'Software',
                  status_buttons:list = None,
-                 departments_buttons:list = None,
+                 departments_buttons:list = None
                  ):
         super().__init__()
         layout = QVBoxLayout()
         self.setLayout(layout)
 
+        self.listView = Files_tableView(parent_class=self,sequence=sequence,shot=shot)
+
         if departments_buttons:
             self.departmentsButtons = Buttons_gridLayout(mutually_exclusive=True,buttonsPerRow=5,
                                                     borderVis=True,boxName='Departments',checkable=True,
-                                                    buttons=departments_buttons,doubleClickConnect=[],clickConnect=[])
+                                                    buttons=departments_buttons,doubleClickConnect=[],clickConnect=[self.listView.set_tableView,self.set_current_department])
             layout.addWidget(self.departmentsButtons)
+            self.current_department = None
 
         if status_buttons:
             self.statusButtons = Buttons_gridLayout(mutually_exclusive=True,buttonsPerRow=5,
                                                     borderVis=True,boxName='Status',checkable=True,
-                                                    buttons=status_buttons,doubleClickConnect=[],clickConnect=[])
+                                                    buttons=status_buttons,doubleClickConnect=[],clickConnect=[self.listView.set_tableView,self.set_current_status])
             layout.addWidget(self.statusButtons)
+            self.current_status = None
 
-        
-        self.listView = Files_listView()
         layout.addWidget(self.listView)
 
 
-class Files_listView(QWidget):
-    def __init__(self):
+    #--- --- ---
+
+    def set_current_status(self):
+        'returns current status'
+        if hasattr(self,'statusButtons'):
+            self.current_status = self.statusButtons.currentButton.text()
+            return self.current_status
+        return None
+    
+    #--- --- ---
+
+    def set_current_department(self):
+        'returns current department'
+        if hasattr(self,'departmentsButtons'):
+            self.current_department = self.departmentsButtons.currentButton.text()
+            return self.current_department
+        return None
+
+
+
+
+class Files_tableView(QWidget):
+    def __init__(self,parent_class,sequence,shot):
         super().__init__()
+
+        self.parent_class = parent_class
+        self.sequence = sequence
+        self.shot = shot
+
         layout = QHBoxLayout()
         self.setLayout(layout)
         
-        self.listView = QListView()
+        self.model = QStandardItemModel()
+        self.model.setHorizontalHeaderLabels(["Name", "Last Modification", "Comment"])
+        
+        self.listView = QTableView()
         layout.addWidget(self.listView)
+        self.visualSettings()
+
+    #--- --- ---
+
+    def visualSettings(self):
+        self.listView.setEditTriggers(QTableView.NoEditTriggers)
+        self.listView.horizontalHeader().setStretchLastSection(True)
+        self.listView.setShowGrid(False)
+        self.listView.resizeRowsToContents()  
+        self.listView.resizeColumnsToContents()
+
+    #--- --- ---
+
+    def set_tableView(self):
+
+        sequence = self.sequence.currentButtonName()
+        shot = self.shot.shot_selection
+        status = self.parent_class.current_department
+        department = self.parent_class.current_status
+        print(sequence,status,department)
+        response = requests.get(f'{global_variables.sequences_url}/get_files/{sequence}/{shot}/{department}/{status}')
+        files = response.json()
+        print(files)
+
+    #--- --- ---
+
+    '''def update_listview(self):
+        self.active_software_tab = self.software_tab_widget.currentWidget()
+        if not self.active_software_tab:
+            return
+
+        asset_type = self.active_asset_subtab.get_asset_type()
+        asset_name = self.active_asset_subtab.get_asset_selection()
+
+        department = self.active_software_tab.get_department()
+        status = self.active_software_tab.get_status()
+
+        if None in (asset_type, asset_name, department):
+            return 
+        
+        #self.files_view_model.clear()
+        self.files_view_model.removeRows(0, self.files_view_model.rowCount())
+
+        response = requests.get(f'{base_url}/get_files_of_asset/{asset_type}/{asset_name}/{department}/{status}')
+        results = response.json()
+
+        for result in results:
+            name = QStandardItem(result[0])
+            last_modification = QStandardItem(result[1].split()[0])
+            #comment = QStandardItem(result[2])
+            #self.files_view_model.appendRow([name, last_modification, comment])
+            self.files_view_model.appendRow([name, last_modification])
+
+        print(results)
+        self.files_view.resizeRowsToContents()
+        self.files_view.resizeColumnsToContents()'''
