@@ -2,15 +2,17 @@
 #--- --- Imports
 
 #--- PySide6 imports
+
 from PySide6.QtWidgets import QButtonGroup,QRadioButton,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QDialogButtonBox,QDialog,QLabel,QTableView,QHeaderView
 from PySide6.QtWidgets import  QGridLayout, QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy
 from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag
 from PySide6.QtCore import Qt,QMimeData,QUrl
 
 #--- Standard library imports
-import os,shutil,sqlite3,logging,uuid
+import os,shutil,sqlite3,logging,uuid,requests
 from pathlib import Path
-import requests
+from typing import Callable, Optional
+
 
 #--- data imports
 
@@ -49,7 +51,7 @@ class Sequences_tab(QWidget):
 
         self.left_sublayout = QVBoxLayout()
         self.sequences_layout.addLayout(self.left_sublayout)
-        self.right_sublayout = QHBoxLayout()
+        self.right_sublayout = QVBoxLayout()
         self.sequences_layout.addLayout(self.right_sublayout)
         
 
@@ -59,7 +61,7 @@ class Sequences_tab(QWidget):
         sequences = response.json()
 
         self.sequencesButtons = Buttons_gridLayout(mutually_exclusive=True,buttonsPerRow=5,borderVis=False,boxName='Sequences',checkable=True,
-                                             buttons=sequences,clickConnect=[self.update_shots_view,self.update_files],maximumHeight=200,maximumWidth=350,
+                                             buttons=sequences,clickConnect=[self.update_shots_view,self.updateFiles],maximumHeight=200,maximumWidth=350,
                                              font='Times',fontSize=10)
         self.sequencesButtons.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.left_sublayout.addWidget(self.sequencesButtons)
@@ -79,21 +81,26 @@ class Sequences_tab(QWidget):
         self.tabWidget.currentChanged.connect(self.set_activeSoftwareTab)
         self.right_sublayout.addWidget(self.tabWidget)
 
-        self.maya_tab = Software_subtab(software='maya',sequence=self.sequencesButtons,shot=self.shots_view,status_buttons=sequences_status,departments_buttons=sequences_maya_departments)
-        self.tabWidget.addTab(self.maya_tab,'Maya tab')
 
-        self.activeSoftwareTab = self.maya_tab
+        self.mayaDepartmentConfig = SoftwareFolderData(folderName='departments',buttons=sequences_maya_departments,changeConnect=[self.updateFiles])
+        self.mayaStatusConfig =  SoftwareFolderData(folderName='status',buttons=sequences_status,changeConnect=[self.updateFiles])
+        self.mayaTab = Software_subtab(softwaresFolderData=[self.mayaDepartmentConfig,self.mayaStatusConfig],
+                                       basePath= lambda : sequences_path + '\\' + self.currentSequence() + '\\' + self.currentShot() or '')
 
-        self.houdini_tab = Software_subtab(software='houdini',sequence=self.sequencesButtons,shot=self.shots_view,status_buttons=[],departments_buttons=sequences_houdini_departments)
-        self.tabWidget.addTab(self.houdini_tab,'Houdini tab')
+        self.tabWidget.addTab(self.mayaTab,'Maya tab')
+        self.activeSoftwareTab = self.mayaTab
 
         self.sequences_layout.setStretch(0, 3)  
         self.sequences_layout.setStretch(1, 7)  
         
+        #--- --- --- Files view
+
+        self.filesView = Files_tableView(parent_class=self,dbType='test',dbName=self.currentSequence,element=self.currentShot,department=self.currentDepartment,status=self.currentStatus)
+        self.right_sublayout.addWidget(self.filesView)
     #--- --- ---
 
-    def update_files(self):
-        self.activeSoftwareTab.filesView.set_tableView()
+    def updateFiles(self):
+        self.filesView.set_tableView()
 
     #--- --- ---
 
@@ -109,6 +116,29 @@ class Sequences_tab(QWidget):
 
     #--- --- ---
 
+    def currentSequence(self):
+        if self.sequencesButtons.currentButtonName():
+            return self.sequencesButtons.currentButtonName()
+        return None
+
+    #--- --- ---
+
+    def currentShot(self):
+        if self.shots_view.currentShot:
+            return self.shots_view.currentShot
+        return None
+
+    #--- --- ---
+
+    def currentDepartment(self):
+        return self.activeSoftwareTab.folders['departments']['currentValue']()
+    
+    #--- --- ---
+
+    def currentStatus(self):
+        return self.activeSoftwareTab.folders['status']['currentValue']()
+    
+    #--- --- ---
     def open_sequence(self):
         'opens the folder of the selected sequence'
         try:
@@ -127,7 +157,7 @@ class Sequences_tab(QWidget):
     def on_display(self):
         pass
 
-#---  ---#
+#--- ---  ---#
 
 class Shots_widget(QWidget):
 
@@ -151,12 +181,12 @@ class Shots_widget(QWidget):
         self.shots_layout.addWidget(self.listView)
         self.listView.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.listView.clicked.connect(self.set_shot_selection)
-        self.listView.clicked.connect(self.parent_class.update_files)
+        self.listView.clicked.connect(self.parent_class.updateFiles)
         self.listView.doubleClicked.connect(self.open_shot)
 
         #--- --- ---
 
-        self.shot_selection = None
+        self.currentShot = None
 
         #--- --- --
 
@@ -182,131 +212,151 @@ class Shots_widget(QWidget):
         'sets the shot selection to the selected item'
         index = self.listView.currentIndex()
         item = self.model.itemFromIndex(index)
-        self.shot_selection = item.text()
+        self.currentShot = item.text()
 
 
     def open_shot(self):
         'opens the selected shot'
-        response = requests.get(f'{global_variables.sequences_url}/get_shot_path/{self.parent_class.sequencesButtons.currentButton.text()}/{self.shot_selection}')
+        response = requests.get(f'{global_variables.sequences_url}/get_shot_path/{self.parent_class.sequencesButtons.currentButton.text()}/{self.currentShot}')
         shot_path = response.json()
         print(shot_path)
         os.startfile(shot_path)
 
-#---  ---#
+#--- ---  ---#
+
+class SoftwareFolderData():
+    def __init__(self,folderName:str,
+                 buttons:list,
+                 inPath:str = None,
+                 outPath:str = None,
+                 changeConnect:list[Callable] = []
+                 ):
+        self.folderName =folderName
+        self.buttons = buttons
+        self.inPath = inPath
+        self.outPath = outPath
+        self.changeConnect = changeConnect
+
+#--- ---  ---#
 
 class Software_subtab(QWidget):
+    '''
+    Widget to display the departments and status for a given software as buttons, allow to quickly acces the path of these departments,
+    Displays a view of the files
+    '''
+    
     def __init__(self,
-                 sequence,
-                 shot,
-                 software:str = 'Software',
-                 status_buttons:list = None,
-                 departments_buttons:list = None,
-                 departmentToStatusPath:str = None,
-                 ):
+                 softwaresFolderData:list[Callable],
+                 basePath:str
+                 ) :
+
         super().__init__()
         layout = QVBoxLayout()
         self.setLayout(layout)
-
+        self.basePath = basePath
         
-        
-        self.filesView = Files_tableView(parent_class=self,sequence=sequence,shot=shot)
+        self.folders = {}
+        self.openButtons = []
 
-        if departments_buttons:
-            self.departmentsButtons = Buttons_gridLayout(mutually_exclusive=True,buttonsPerRow=5,
-                                                    borderVis=True,boxName='Departments',checkable=True,
-                                                    buttons=departments_buttons,clickConnect=[self.filesView.set_tableView,self.set_current_department],
+        for folder in softwaresFolderData:
+
+            self.folders[folder.folderName] = {}
+            self.folders[folder.folderName]['dataClass'] = folder
+           
+
+            self.folders[folder.folderName]['buttons'] = Buttons_gridLayout(mutually_exclusive=True,buttonsPerRow=5,
+                                                    borderVis=True,boxName=folder.folderName,checkable=True,
+                                                    buttons=folder.buttons,clickConnect=[func for func in folder.changeConnect],
                                                     maximumHeight=70,fontSize=10)
-            layout.addWidget(self.departmentsButtons)
-            self.current_department = None
+            
+            self.folders[folder.folderName]['openButton'] = QPushButton(f'Open {folder.folderName}')
+            self.folders[folder.folderName]['openButton'].clicked.connect(lambda checked=True, folder = self.folders[folder.folderName] : self.open(checked=checked,folder = folder))
+            self.openButtons.append(self.folders[folder.folderName]['openButton'])
+            
+            layout.addWidget(self.folders[folder.folderName]['buttons'])
 
-            self.openDepartmentButton = QPushButton('open department')
-            self.openDepartmentButton.clicked.connect(self.openDepartment)
+            self.folders[folder.folderName]['currentValue'] = lambda folderName=folder.folderName: self.folders[folderName]['buttons'].currentButton.text()
 
-
-        if status_buttons:
-            self.statusButtons = Buttons_gridLayout(mutually_exclusive=True,buttonsPerRow=5,
-                                                    borderVis=True,boxName='Status',checkable=True,
-                                                    buttons=status_buttons,clickConnect=[self.filesView.set_tableView,self.set_current_status],
-                                                    maximumHeight=70,fontSize=10)
-            layout.addWidget(self.statusButtons)
-            self.current_status = None
-
-            self.openStatusButton = QPushButton('open status')
-            self.openStatusButton.clicked.connect(self.openStatus)
-
-        #--- ---
 
         self.openButtonsBox = QGroupBox()
         self.openButtonsBoxLayout = QHBoxLayout()
         self.openButtonsBox.setLayout(self.openButtonsBoxLayout)
-        if departments_buttons:
-            self.openButtonsBoxLayout.addWidget(self.openDepartmentButton)
-        if status_buttons:
-           self.openButtonsBoxLayout.addWidget(self.openStatusButton)
+        for openButton in self.openButtons:
+            self.openButtonsBoxLayout.addWidget(openButton)
+
         layout.addWidget(self.openButtonsBox)
 
-        layout.addWidget(self.filesView)
+    def open(self,checked,folder):
+        print('uh')
+        print(self.basePath())
+        print(folder['departments']['currentValue']())
+        #self.folders[folder]['departments']
 
-    #--- --- ---
-
-    def openStatus(self):
-        pass
-
-    #--- --- ---
-
-    def openDepartment(self):
-        pass
-
-    #--- --- ---
-
-    def set_current_status(self):
-        'returns current status'
-        if hasattr(self,'statusButtons'):
-            self.current_status = self.statusButtons.currentButton.text()
-            return self.current_status
-        return None
-    
-    #--- --- ---
-
-    def set_current_department(self):
-        'returns current department'
-        if hasattr(self,'departmentsButtons'):
-            self.current_department = self.departmentsButtons.currentButton.text()
-            return self.current_department
-        return None
-
-#---  ---#
+        #folderName = self.folders[folder]['departments']['currentValue']()
+        #os.startfile(os.path.join(self.basePath(),inPath or '',folderName,outPath or ''))
+        
+        
+#--- ---  ---#
 
 class Files_tableView(QWidget):
-    def __init__(self,parent_class,sequence,shot):
+    def __init__(self,
+                 parent_class,dbType:str,
+                 dbName:Callable[[], str],element:Callable[[], str],
+                 department:Callable[[], str],status:Callable[[], str]):
+        
         super().__init__()
+        #--- --- ---
 
         self.parent_class = parent_class
-        self.sequence = sequence
-        self.shot = shot
+        self.dbType = dbType
+        self.dbName = dbName
+        self.element = element
+        self.department = department
+        self.status = status
+
+        #--- --- ---
 
         layout = QHBoxLayout()
         self.setLayout(layout)
         
+        #--- --- ---
+
         self.model = QStandardItemModel()
         self.model.setHorizontalHeaderLabels(["Name", "Last Modification", "Comment"])
-        
+        self.selectedFile = None
+
+        #--- --- ---
+
         self.tableView = QTableView()
         self.tableView.setModel(self.model)
+        self.tableView.clicked.connect(self.setSelectedFile)
         self.tableView.doubleClicked.connect(self.open_file)
         layout.addWidget(self.tableView)
         self.visualSettings()
         
+        #--- --- ---
+
         self.testButton = QPushButton('test')
         self.testButton.clicked.connect(self.addComment)
         layout.addWidget(self.testButton)
 
-    def addComment(self):
+    def setSelectedFile(self):
+        
         index = self.tableView.currentIndex()
         item = self.model.itemFromIndex(index)
         file = item.text()
 
-        sequence = self.sequence.currentButtonName()
+        self.selectedFile = file
+
+    def addComment(self):
+
+        pass
+        '''
+        index = self.tableView.currentIndex()
+        item = self.model.itemFromIndex(index)
+        file = item.text()
+
+        sequence = self.dbName.currentButtonName()
         shot = self.shot.shot_selection
         if hasattr(self.parent_class,'current_status'):
             status = self.parent_class.current_status
@@ -318,18 +368,18 @@ class Files_tableView(QWidget):
         
         comment='testComment'
         
-        requests.post(f'{sequences_url}/add_comment/{sequence}/{shot}/{department}/{status}/{file}/{comment}')
+        requests.post(f'{sequences_url}/add_comment/{sequence}/{shot}/{department}/{status}/{file}/{comment}')'''
         
 
     #--- --- ---
 
     def open_file(self):
 
-        index = self.tableView.currentIndex()
+        '''index = self.tableView.currentIndex()
         item = self.model.itemFromIndex(index)
         file = item.text()
 
-        sequence = self.sequence.currentButtonName()
+        sequence = self.dbName.currentButtonName()
         shot = self.shot.shot_selection
         if hasattr(self.parent_class,'current_status'):
             status = self.parent_class.current_status
@@ -342,7 +392,7 @@ class Files_tableView(QWidget):
         response = requests.get(f'{sequences_url}/get_file_path/{sequence}/{shot}/{department}/{status}/{file}')
         file_path = response.json()
         
-        os.startfile(file_path)
+        os.startfile(file_path)'''
 
     #--- --- ---
 
@@ -358,28 +408,15 @@ class Files_tableView(QWidget):
 
     def set_tableView(self):
 
-        sequence = self.sequence.currentButtonName()
-        shot = self.shot.shot_selection
-        if hasattr(self.parent_class,'current_status'):
-            status = self.parent_class.current_status
-        else:
-            status = None
-        department = self.parent_class.current_department
-        if None in [sequence,shot,department]:
-            return
-
-        response = requests.get(f'{global_variables.sequences_url}/get_files/{sequence}/{shot}/{status}/{department}')
+        print(self.dbName(),self.element(),self.status(),self.department())
+        response = requests.get(f'{global_variables.sequences_url}/get_files/{self.dbName()}/{self.element()}/{self.status()}/{self.department()}')
         files = response.json()
 
-        #self.files_view_model.clear()
         self.model.removeRows(0, self.model.rowCount())
-
 
         for data in files:
             name = QStandardItem(data[0])
             last_modification = QStandardItem(data[1].split()[0])
-            #comment = QStandardItem(result[2])
-            #self.files_view_model.appendRow([name, last_modification, comment])
             self.model.appendRow([name, last_modification])
         self.visualSettings()
 

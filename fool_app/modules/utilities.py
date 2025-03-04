@@ -62,12 +62,18 @@ class Buttons_gridLayout(QWidget):
             if checkable:
                 self.currentButton = None
                 self.buttonsGroup.buttonClicked.connect(self.setCurrentButton)
+                self.buttonsDict[button].setChecked(True)
+                self.currentButton = self.buttonsGroup.checkedButton()
 
-            if clickConnect:
-                for connection in clickConnect:
-                    self.buttonsGroup.buttonClicked.connect(connection)
-        self.updateGeometry()  
-        self.adjustSize()
+        if clickConnect:
+            for connection in clickConnect:
+                self.buttonsGroup.buttonClicked.connect(connection)
+        '''self.updateGeometry()  
+        self.adjustSize()'''
+        
+
+
+
     def setCurrentButton(self):
         self.currentButton = self.buttonsGroup.checkedButton()
 
