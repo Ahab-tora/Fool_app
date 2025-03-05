@@ -101,7 +101,7 @@ class Tools_tab(QWidget):
             
             scenes_buttons_instances = {}
             for scene in scenes:
-                scenes_buttons_instances[scenes] = Drop_reference_button(text=scene.split('\\')[-1],parent=self,file=scene)
+                scenes_buttons_instances[scene] = Drop_reference_button(text=scene.split('\\')[-1],parent=self,file=scene)
 
                 row = i // 5  
                 column = i % 5   
@@ -144,7 +144,7 @@ class Tools_tab(QWidget):
             
             scenes_buttons_instances = {}
             for scene in scenes:
-                scenes_buttons_instances[scenes] = Drop_reference_button(text=scene.split('\\')[-1],parent=self,file=scene)
+                scenes_buttons_instances[scene] = Drop_reference_button(text=scene.split('\\')[-1],parent=self,file=scene)
 
                 row = i // 5  
                 column = i % 5   

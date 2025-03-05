@@ -225,7 +225,8 @@ class Shots_widget(QWidget):
 #--- ---  ---#
 
 class SoftwareFolderData():
-    def __init__(self,folderName:str,
+    def __init__(self,
+                 folderName:str,
                  buttons:list,
                  inPath:str = None,
                  outPath:str = None,
@@ -246,7 +247,7 @@ class Software_subtab(QWidget):
     '''
     
     def __init__(self,
-                 softwaresFolderData:list[Callable],
+                 softwaresFolderData:list[SoftwareFolderData],
                  basePath:str
                  ) :
 
@@ -417,7 +418,8 @@ class Files_tableView(QWidget):
         for data in files:
             name = QStandardItem(data[0])
             last_modification = QStandardItem(data[1].split()[0])
-            self.model.appendRow([name, last_modification])
+            comment = QStandardItem(data[2])
+            self.model.appendRow([name, last_modification,comment])
         self.visualSettings()
 
 

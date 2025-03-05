@@ -71,7 +71,7 @@ class Welcome(QWidget):
         self.welcome_tab_layout.addWidget(self.favorite_files_group)
 
         # --- Assigned Tasks ---
-        self.tasks_group = QGroupBox("Assigned Tasks")
+        '''self.tasks_group = QGroupBox("Assigned Tasks")
         tasks_layout = QVBoxLayout()
 
         self.due_tasks_QListWidget = QListWidget()
@@ -84,7 +84,7 @@ class Welcome(QWidget):
         self.tasks_group.setLayout(tasks_layout)
         self.welcome_tab_layout.addWidget(self.tasks_group)
 
-        self.set_due_tasks(manage_connection=True)
+        self.set_due_tasks(manage_connection=True)'''
 
     def on_display(self):
         self.set_favorites_files()
