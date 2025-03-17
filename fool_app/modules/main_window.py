@@ -22,6 +22,7 @@ from .ftrack_tab import Ftrack_tab
 from .assets_tab import Assets_tab
 from .tools_tab import Tools_tab
 from .sequences_tab import Sequences_tab
+from .elementsTab import ElementsTab
 
 class Fool (QMainWindow):
 
@@ -57,6 +58,9 @@ class Fool (QMainWindow):
         self.tools_tab = Tools_tab()
         self.tab_widget.addTab(self.tools_tab,'Tools tab')
 
+        '''self.testTab = ElementsTab(name='sequences')
+        self.tab_widget.addTab(self.testTab,'sequences')'''
+        
         self.loaded_tab = self.welcome_tab
         self.tab_widget.currentChanged.connect(self.tab_change)
         

@@ -1,0 +1,52 @@
+Date : 2025-03-16 23:39:32
+Directory : f:\Fool_app
+Total : 19 files,  2628 codes, 258 comments, 1155 blanks, all 4041 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Python   |         17 |      2,603 |        258 |      1,154 |      4,015 |
+| JSON     |          1 |         23 |          0 |          0 |         23 |
+| Markdown |          1 |          2 |          0 |          1 |          3 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------+------------+------------+------------+------------+------------+
+| path                                          | files      | code       | comment    | blank      | total      |
++-----------------------------------------------+------------+------------+------------+------------+------------+
+| .                                             |         19 |      2,628 |        258 |      1,155 |      4,041 |
+| . (Files)                                     |          1 |          2 |          0 |          1 |          3 |
+| fool_app                                      |         18 |      2,626 |        258 |      1,154 |      4,038 |
+| fool_app (Files)                              |          3 |         92 |         14 |         43 |        149 |
+| fool_app\data                                 |          3 |         31 |          7 |          9 |         47 |
+| fool_app\modules                              |         10 |      2,502 |        237 |      1,101 |      3,840 |
+| fool_app\temp                                 |          1 |          0 |          0 |          1 |          1 |
+| fool_app\tools                                |          1 |          1 |          0 |          0 |          1 |
++-----------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                      | language | code       | comment    | blank      | total      |
++-----------------------------------------------+----------+------------+------------+------------+------------+
+| f:\Fool_app\README.md                         | Markdown |          2 |          0 |          1 |          3 |
+| f:\Fool_app\fool_app\__init__.py              | Python   |          0 |          0 |          1 |          1 |
+| f:\Fool_app\fool_app\data\__init__.py         | Python   |          0 |          0 |          1 |          1 |
+| f:\Fool_app\fool_app\data\files_data.json     | JSON     |         23 |          0 |          0 |         23 |
+| f:\Fool_app\fool_app\data\global_variables.py | Python   |          8 |          7 |          8 |         23 |
+| f:\Fool_app\fool_app\main.py                  | Python   |         40 |         11 |         14 |         65 |
+| f:\Fool_app\fool_app\modules\__init__.py      | Python   |          0 |          0 |          1 |          1 |
+| f:\Fool_app\fool_app\modules\assets_tab.py    | Python   |        587 |         60 |        277 |        924 |
+| f:\Fool_app\fool_app\modules\elementsTab.py   | Python   |        251 |         39 |        121 |        411 |
+| f:\Fool_app\fool_app\modules\ftrack_tab.py    | Python   |        602 |         42 |        266 |        910 |
+| f:\Fool_app\fool_app\modules\main_window.py   | Python   |        103 |          6 |         23 |        132 |
+| f:\Fool_app\fool_app\modules\sequences_tab.py | Python   |        259 |         43 |        125 |        427 |
+| f:\Fool_app\fool_app\modules\tools_tab.py     | Python   |        180 |         10 |         82 |        272 |
+| f:\Fool_app\fool_app\modules\treeview_tab.py  | Python   |        265 |         23 |        118 |        406 |
+| f:\Fool_app\fool_app\modules\utilities.py     | Python   |        110 |          2 |         38 |        150 |
+| f:\Fool_app\fool_app\modules\welcome_tab.py   | Python   |        145 |         12 |         50 |        207 |
+| f:\Fool_app\fool_app\temp\__init__.py         | Python   |          0 |          0 |          1 |          1 |
+| f:\Fool_app\fool_app\test.py                  | Python   |         52 |          3 |         28 |         83 |
+| f:\Fool_app\fool_app\tools\test.py            | Python   |          1 |          0 |          0 |          1 |
+| Total                                         |          |      2,628 |        258 |      1,155 |      4,041 |
++-----------------------------------------------+----------+------------+------------+------------+------------+
