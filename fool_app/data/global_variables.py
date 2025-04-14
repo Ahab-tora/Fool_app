@@ -9,6 +9,7 @@ import os
 
 base_url = "http://192.168.56.1:8000/END"
 queryUrl = base_url + '/query'
+ftrackUrl = base_url + '/ftrack'
 sequences_url = base_url + '/sequences'
 assets_url = base_url + '/assets'
 fool_path =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -17,6 +18,7 @@ fool_path =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 api_user = 'e.guinet-elmi@lyn.ecolescreatives.com'
 
 #--- --- Version
-version = '1.0.25022025'
+#version = '1.0.25022025'
+version = 'testing'
 
 

@@ -45,7 +45,7 @@ class Fool (QMainWindow):
         '''self.treeview_tab = Treeview(root_path=global_variables.root_path,table_path= global_variables.tables_path + '\\treeview_table.db')
         self.tab_widget.addTab(self.treeview_tab,'treeview tab')'''
         
-        self.ftrack_tab = Ftrack_tab()
+        '''self.ftrack_tab = Ftrack_tab()
         self.tab_widget.addTab(self.ftrack_tab,'ftrack tab')
 
         
@@ -56,10 +56,13 @@ class Fool (QMainWindow):
         self.tab_widget.addTab(self.sequences_tab,'Sequences tab')
 
         self.tools_tab = Tools_tab()
-        self.tab_widget.addTab(self.tools_tab,'Tools tab')
+        self.tab_widget.addTab(self.tools_tab,'Tools tab')'''
 
-        '''self.testTab = ElementsTab(name='sequences')
-        self.tab_widget.addTab(self.testTab,'sequences')'''
+        self.testTab = ElementsTab(name='sequences')
+        self.tab_widget.addTab(self.testTab,'sequences')
+
+        '''self.testTab = ElementsTab(name='assets')
+        self.tab_widget.addTab(self.testTab,'assets')'''
         
         self.loaded_tab = self.welcome_tab
         self.tab_widget.currentChanged.connect(self.tab_change)

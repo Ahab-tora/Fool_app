@@ -4,10 +4,18 @@ import data
 from data import global_variables
 from PySide6.QtWidgets import QMessageBox,QWidget,QHBoxLayout,QGroupBox,QGridLayout,QButtonGroup,QPushButton,QSizePolicy
 from PySide6.QtGui import QFont
+from PySide6.QtCore import Signal
 
 fool_path = global_variables.fool_path
 
+class doubleClickButton(QPushButton):
+    doubleClicked = Signal()
+    def __init__(self,text,parent=None):
+        super().__init__(text,parent)
 
+    def mouseDoubleClickEvent(self, event):
+        self.doubleClicked.emit()
+        event.accept()
 class Buttons_gridLayout(QWidget):
     def __init__(self,
                  mutually_exclusive:bool = True,
@@ -87,7 +95,7 @@ class Buttons_gridLayout(QWidget):
         return None
 
 def update_recently_opened(path):
-    print('updating')
+    
     try:
 
         with open(fool_path + '\\data\\files_data.json', "r") as file:

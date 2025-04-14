@@ -30,24 +30,21 @@ api_user = global_variables.api_user
 response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
 pipeline_path = response.json()
 
-response = requests.get(f'{global_variables.base_url}/get_api_key')
-api_key = response.json()
+response = requests.get(f'{global_variables.ftrackUrl}/ftrackKey')
+ftrackKey = response.json()
 
-response = requests.get(f'{global_variables.base_url}/get_project_name')
+response = requests.get(f'{global_variables.ftrackUrl}/projectName')
 project_name = response.json()
 
-response = requests.get(f'{global_variables.base_url}/get_ftrack_server_url')
+response = requests.get(f'{global_variables.ftrackUrl}/ftrackServerUrl')
 ftrack_server_url = response.json()
 
 response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
 pipeline_path = response.json()
 
-response = requests.get(f'{global_variables.base_url}/get_project_users')
-project_users = response.json()
-
 session = ftrack_api.Session(
 server_url=ftrack_server_url,
-api_key=api_key,
+api_key=ftrackKey,
 api_user=api_user,)
 
 status_query = session.query('Status').all()
@@ -433,7 +430,7 @@ def open_ftrack_session():
     '''
     session = ftrack_api.Session(
     server_url=ftrack_server_url,
-    api_key=api_key,
+    api_key=ftrackKey,
     api_user=api_user,)
 
     return session

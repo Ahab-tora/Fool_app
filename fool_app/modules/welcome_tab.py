@@ -10,10 +10,10 @@ import ftrack_api,os,json,requests
 import data
 from data import global_variables
 
-response = requests.get(f'{global_variables.base_url}/get_api_key')
-api_key = response.json()
+'''response = requests.get(f'{global_variables.base_url}/get_api_key')
+api_key = response.json()'''
 
-response = requests.get(f'{global_variables.base_url}/get_ftrack_server_url')
+response = requests.get(f'{global_variables.ftrackUrl}/ftrackServerUrl')
 ftrack_server_url = response.json()
 
 response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
