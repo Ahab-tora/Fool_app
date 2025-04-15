@@ -8,6 +8,7 @@ import os
 #--- --- Paths
 
 base_url = "http://192.168.56.1:8000/END"
+varsUrl = base_url + '/vars'
 queryUrl = base_url + '/query'
 ftrackUrl = base_url + '/ftrack'
 sequences_url = base_url + '/sequences'

@@ -91,7 +91,7 @@ class ElementsTab(QWidget):
         self.setActivefolderSubtab()
 
         #--- --- --- Files view
-        self.filesView = Files_tableView(dbName = self.getCurrentType(),parentClass=self,parentPath=None)
+        self.filesView = Files_tableView(dbName = self.getCurrentType,parentClass=self,parentPath=None)
         self.right_sublayout.addWidget(self.filesView)
 
     #--- --- ---
@@ -526,7 +526,7 @@ class Files_tableView(QWidget):
     def set_tableView(self):
 
         params = {"parentPath": self.parentClass.getParentPath()}
-        response = requests.get(url=f'{global_variables.queryUrl}/getFiles/{self.dbName}',params=params)
+        response = requests.get(url=f'{global_variables.queryUrl}/getFiles/{self.dbName()}',params=params)
         
         files = response.json()
         print(files)

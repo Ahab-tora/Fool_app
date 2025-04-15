@@ -19,7 +19,7 @@ from data import global_variables
 
 #--- --- --- ---#
 
-response = requests.get(f'{global_variables.base_url}/get_team_tools_path')
+response = requests.get(f'{global_variables.varsUrl}/get_team_tools_path')
 team_tools_path = response.json()
 
 fool_path = global_variables.fool_path

@@ -19,9 +19,9 @@ from data import global_variables
 from .treeview_tab import Treeview
 from .welcome_tab import Welcome
 from .ftrack_tab import Ftrack_tab
-from .assets_tab import Assets_tab
+#from .assets_tab import Assets_tab
 from .tools_tab import Tools_tab
-from .sequences_tab import Sequences_tab
+#from .sequences_tab import Sequences_tab
 from .elementsTab import ElementsTab
 
 class Fool (QMainWindow):

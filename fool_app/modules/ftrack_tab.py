@@ -27,7 +27,7 @@ types_list = ['production','R&d','Compositing','rendering','storyboard','lookdev
 
 api_user = global_variables.api_user
 
-response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
+response = requests.get(f'{global_variables.varsUrl}/get_pipeline_path')
 pipeline_path = response.json()
 
 response = requests.get(f'{global_variables.ftrackUrl}/ftrackKey')
@@ -39,7 +39,7 @@ project_name = response.json()
 response = requests.get(f'{global_variables.ftrackUrl}/ftrackServerUrl')
 ftrack_server_url = response.json()
 
-response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
+response = requests.get(f'{global_variables.varsUrl}/get_pipeline_path')
 pipeline_path = response.json()
 
 session = ftrack_api.Session(

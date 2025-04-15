@@ -16,7 +16,7 @@ api_key = response.json()'''
 response = requests.get(f'{global_variables.ftrackUrl}/ftrackServerUrl')
 ftrack_server_url = response.json()
 
-response = requests.get(f'{global_variables.base_url}/get_pipeline_path')
+response = requests.get(f'{global_variables.varsUrl}/get_pipeline_path')
 pipeline_path = response.json()
 
 fool_path = global_variables.fool_path
