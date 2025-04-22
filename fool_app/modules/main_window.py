@@ -40,23 +40,16 @@ class Fool (QMainWindow):
         #we call the tabs
         
         self.welcome_tab = Welcome()
-        self.tab_widget.addTab(self.welcome_tab,'welcome tab')
+        self.tab_widget.addTab(self.welcome_tab,'Homepage')
 
         '''self.treeview_tab = Treeview(root_path=global_variables.root_path,table_path= global_variables.tables_path + '\\treeview_table.db')
         self.tab_widget.addTab(self.treeview_tab,'treeview tab')'''
         
-        '''self.ftrack_tab = Ftrack_tab()
+        self.ftrack_tab = Ftrack_tab()
         self.tab_widget.addTab(self.ftrack_tab,'ftrack tab')
 
-        
-        self.assets_tab = Assets_tab()
-        self.tab_widget.addTab(self.assets_tab,'Assets tab')
-
-        self.sequences_tab = Sequences_tab()
-        self.tab_widget.addTab(self.sequences_tab,'Sequences tab')
-
         self.tools_tab = Tools_tab()
-        self.tab_widget.addTab(self.tools_tab,'Tools tab')'''
+        self.tab_widget.addTab(self.tools_tab,'Tools tab')
 
         self.testTab = ElementsTab(name='sequences')
         self.tab_widget.addTab(self.testTab,'sequences')

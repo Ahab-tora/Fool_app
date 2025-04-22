@@ -42,6 +42,10 @@ ftrack_server_url = response.json()
 response = requests.get(f'{global_variables.varsUrl}/get_pipeline_path')
 pipeline_path = response.json()
 
+response = requests.get(f'{global_variables.ftrackUrl}/projectUsers')
+project_users = response.json()
+
+
 session = ftrack_api.Session(
 server_url=ftrack_server_url,
 api_key=ftrackKey,

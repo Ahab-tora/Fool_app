@@ -89,6 +89,7 @@ class ElementsTab(QWidget):
     
         self.tabWidget.currentChanged.connect(lambda changeActiveFolder : self.setActivefolderSubtab())
         self.setActivefolderSubtab()
+        self.tabWidget.currentChanged.connect(lambda updateFiles : self.updateFiles())
 
         #--- --- --- Files view
         self.filesView = Files_tableView(dbName = self.getCurrentType,parentClass=self,parentPath=None)
@@ -129,7 +130,7 @@ class ElementsTab(QWidget):
     def updateFiles(self):
         print('updating')
         self.setParentPath()
-        self.filesView.set_tableView()
+        self.filesView.setTableView()
 
     #--- --- ---
 
@@ -354,7 +355,7 @@ class contextMenuTableView(QTableView):
         self.setDragEnabled(True)
         self.setDropIndicatorShown(True)
         self.setDragDropOverwriteMode(False)
-
+        self.setDragDropMode(QTableView.DropOnly) 
 
     #--- --- ---
 
@@ -362,9 +363,11 @@ class contextMenuTableView(QTableView):
         menu = QMenu(self)
         openFileButton = menu.addAction("Open file")
         copyFileButton = menu.addAction("Copy file to dekstop")
+        refreshButton = menu.addAction('Refresh view')
 
         openFileButton.triggered.connect(self.openFile)
         copyFileButton.triggered.connect(self.copyFile)
+        refreshButton.triggered.connect(self.refreshView)
 
         selected_action = menu.exec(event.globalPos())
         #print('righyt click')
@@ -393,11 +396,41 @@ class contextMenuTableView(QTableView):
     #--- --- ---
 
     def refreshView(self):
-        pass
+        self.parentClass.setTableView()
 
-    def dropEvent(self,e):
-        print(e)
+    def dragEnterEvent(self, event):
+        print("dragEnterEvent")
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        print("dragMoveEvent")
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+
+    def dropEvent(self,event):
+        print(event)
+        if event.mimeData().hasUrls():
+          
+            event.acceptProposedAction()
+        
+            for url in event.mimeData().urls():
+                droppedFilePath = url.toLocalFile()
+            
+                destPath = self.parentClass.parentClass.getParentPath()
+                shutil.copy(droppedFilePath,destPath)
+                self.refreshView()
+
+        else:
+            event.ignore()
+
     #--- --- ---
+
     def mouseMoveEvent(self, e):
         if e.buttons() == Qt.MouseButton.LeftButton:
             drag = QDrag(self)
@@ -410,9 +443,9 @@ class contextMenuTableView(QTableView):
             maya_code = f'''
 import maya.cmds as cmds
 def onMayaDroppedPythonFile(*args):
-    file_path = '{filePath}'
-
-cmds.file(file_path, reference=True)'''
+    filePath = '{filePath}'
+    namespace = filePath.split('/')[-1][0:-3]
+    cmds.file(filePath, reference=True,namespace=namespace)'''
 
             temp_file_name = f'temp_file_drop_{uuid.uuid4()}.py'
             temp_file_path = fool_path + '\\temp\\' + temp_file_name 
@@ -455,7 +488,7 @@ class Files_tableView(QWidget):
         #--- --- ---
 
         self.searchBox = QLineEdit()
-        self.searchBox.textChanged.connect(lambda text: self.set_tableViewSearch(search=text))
+        self.searchBox.textChanged.connect(lambda text: self.setTableViewSearch(search=text))
         layout.addWidget(self.searchBox)
 
         #--- --- ---
@@ -514,22 +547,26 @@ class Files_tableView(QWidget):
     #--- --- ---
 
     def visualSettings(self):
-        self.tableView.setEditTriggers(QTableView.NoEditTriggers)
-        self.tableView.horizontalHeader().setStretchLastSection(True)
+        #self.tableView.setEditTriggers(QTableView.NoEditTriggers)
+        
         self.tableView.setShowGrid(False)
         self.tableView.resizeRowsToContents()  
         self.tableView.resizeColumnsToContents()
         self.tableView.verticalHeader().hide()
+        header = self.tableView.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
 
     #--- --- ---
 
-    def set_tableView(self):
+    def setTableView(self):
 
         params = {"parentPath": self.parentClass.getParentPath()}
         response = requests.get(url=f'{global_variables.queryUrl}/getFiles/{self.dbName()}',params=params)
         
         files = response.json()
-        print(files)
+        #print(files)
         self.model.removeRows(0, self.model.rowCount())
 
         self.itemsData = {}
@@ -554,10 +591,10 @@ class Files_tableView(QWidget):
 
     #--- --- ---
 
-    def set_tableViewSearch(self,search):
+    def setTableViewSearch(self,search):
         print('textChanged')
         params = {"parentPath": self.parentClass.getParentPath(),'search':search}
-        response = requests.get(url=f'{global_variables.queryUrl}/getFilesSearch/{self.dbName}',params=params)
+        response = requests.get(url=f'{global_variables.queryUrl}/getFilesSearch/{self.dbName()}',params=params)
         
         files = response.json()
         self.model.removeRows(0, self.model.rowCount())
@@ -579,5 +616,10 @@ class Files_tableView(QWidget):
             comment = QStandardItem(data[5])
             
             self.model.appendRow([name, lastModification,comment])
+            name.setFlags(name.flags() & ~Qt.ItemIsEditable)
+            lastModification.setFlags(lastModification.flags() & ~Qt.ItemIsEditable)
+            comment.setFlags(comment.flags() | Qt.ItemIsEditable)
+
         self.visualSettings()
+
 
