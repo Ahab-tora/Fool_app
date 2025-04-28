@@ -51,11 +51,11 @@ class Fool (QMainWindow):
         self.tools_tab = Tools_tab()
         self.tab_widget.addTab(self.tools_tab,'Tools tab')
 
-        self.testTab = ElementsTab(name='sequences')
-        self.tab_widget.addTab(self.testTab,'sequences')
+        self.sequencesTab = ElementsTab(name='sequences')
+        self.tab_widget.addTab(self.sequencesTab,'sequences')
 
-        '''self.testTab = ElementsTab(name='assets')
-        self.tab_widget.addTab(self.testTab,'assets')'''
+        self.testTab = ElementsTab(name='assets')
+        self.tab_widget.addTab(self.testTab,'assets')
         
         self.loaded_tab = self.welcome_tab
         self.tab_widget.currentChanged.connect(self.tab_change)

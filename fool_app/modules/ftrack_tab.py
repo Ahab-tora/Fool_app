@@ -190,7 +190,224 @@ class Assets_subtab(QWidget):
         self.props_tab = Asset_type_subsubtab(asset_type='prop')
         self.tab_widget.addTab(self.props_tab,'prop tab')
 
+class Sequences_subtab(QWidget):
+
+    '''
+    Create a Treeview with a custom TreeModel to get the data from ftrack 
+    and Comboboxes to change the data in ftrack
+    work with an asset typ(prop,item,chars or set)
+    '''
+
+    def __init__(self,asset_type:str):
+        super().__init__()
+
+        self.asset_type = asset_type
+        self.subtab_layout = QVBoxLayout()
+        self.setLayout(self.subtab_layout)
+
+        self.model = TreeModel(asset_type=self.asset_type)
+    
+        self.treeview_wgt = Treeview_SubClass(model=self.model)
+        self.treeview_wgt.setModel(self.model)
+        self.subtab_layout.addWidget(self.treeview_wgt)
+
+        #--- --- ---
+
+        props_status_delegate = ComboBoxDelegate(model=self.model,data_type ='status' ,itemlist=status_ftrack_list)
+        self.treeview_wgt.setItemDelegateForColumn(2, props_status_delegate)
+
+        props_assignee_delegate = ComboBoxDelegate(model=self.model,data_type='assignee',itemlist=project_users)
+        self.treeview_wgt.setItemDelegateForColumn(4, props_assignee_delegate)
+
+        #--- --- ---
+
+        asset_group = QGroupBox("Asset Creation")
+        asset_layout = QGridLayout()
+        asset_group.setLayout(asset_layout)
         
+        self.create_asset_button = QPushButton(text="Create Asset")
+        self.create_asset_button.clicked.connect(self.create_asset_global)
+        self.create_folders_pipe = QCheckBox(text="Create directories on pipeline")
+        self.create_folders_pipe.setChecked(True)
+        self.query_asset_name = QLineEdit()
+
+        asset_layout.addWidget(QLabel("Asset name:"), 0, 0)
+        asset_layout.addWidget(self.query_asset_name,0,1)
+        asset_layout.addWidget(self.create_folders_pipe, 1, 0)
+        asset_layout.addWidget(self.create_asset_button, 1, 1)
+
+
+        self.subtab_layout.addWidget(asset_group)
+
+        #--- --- ---
+
+        task_group = QGroupBox("Task Creation")
+        task_layout = QGridLayout()
+        task_group.setLayout(task_layout)
+
+        self.current_parent_asset = QLabel()
+        self.set_current_asset_selection()
+        self.treeview_wgt.clicked.connect(self.set_current_asset_selection)
+        self.query_task_name = QLineEdit()
+        self.query_task_type= QComboBox()
+        self.query_task_type.addItems(types_list)
+        self.create_task_button = QPushButton(text="Create Task")
+        self.create_task_button.clicked.connect(self.create_task_global)
+
+        task_layout.addWidget(QLabel("Task Name:"), 0, 0)
+        task_layout.addWidget(self.query_task_name, 0, 1)
+        task_layout.addWidget(QLabel('Task type:'),0,2)
+        task_layout.addWidget(self.query_task_type,0,3)
+        task_layout.addWidget(QLabel('Current parent asset:'),1,0)
+        task_layout.addWidget(self.current_parent_asset,1,1)
+
+        task_layout.addWidget(self.create_task_button, 3,0)
+
+        self.subtab_layout.addWidget(task_group)
+        
+
+        #--- --- ---
+        utilities_group = QGroupBox('Utilities')
+        utilities_layout = QGridLayout()
+        utilities_group.setLayout(utilities_layout)
+
+        self.reset_treeview_button = QPushButton(text='Reset treeview')
+        self.reset_treeview_button.clicked.connect(self.reset_treeview)
+        self.delete_selection_button = QPushButton(text='Delete selection')
+        self.delete_selection_button.clicked.connect(self.delete_selection)
+
+        utilities_layout.addWidget(self.reset_treeview_button,0,0)
+        utilities_layout.addWidget(self.delete_selection_button,0,1)
+
+        self.subtab_layout.addWidget(utilities_group)
+
+
+    def create_asset_global(self):
+        '''
+        create an asset , basic children tasks and refresh the model, calls create_task func
+        '''
+        asset_type = self.asset_type
+        asset_name = self.query_asset_name.text()
+
+        session = open_ftrack_session()
+        asset = create_asset_ftrack(manage_connection=False,asset_name=asset_name,asset_type=asset_type,session=session)
+        session.commit()
+
+       
+        create_task(manage_connection=False,task_name=asset['name']+'_modeling',task_type='modeling',parent=asset['name'],session=session)
+        create_task(manage_connection=False,task_name=asset['name']+'_dressing',task_type='modeling',parent=asset['name'],session=session)
+        create_task(manage_connection=False,task_name=asset['name']+'_rig',task_type='rig',parent=asset['name'],session=session)
+        create_task(manage_connection=False,task_name=asset['name']+'_lookdev',task_type='lookdev',parent=asset['name'],session=session)
+        create_task(manage_connection=False,task_name=asset['name']+'_texturing',task_type='lookdev',parent=asset['name'],session=session)
+        create_task(manage_connection=False,task_name=asset['name']+'_uv',task_type='lookdev',parent=asset['name'],session=session)
+
+
+        session.commit()
+        session.close()
+
+
+        self.create_folder_asset()
+
+        self.reset_treeview()
+
+
+    def reset_treeview(self):
+        '''
+        deletes the model of the treeview, relaunch it and set it back
+        '''
+        self.treeview_wgt.setModel(None)
+        self.model = TreeModel(asset_type=self.asset_type)
+        self.treeview_wgt.setModel(self.model)
+
+
+    def create_task_global(self):
+        '''
+        create a task and refresh the model, calls create_task func
+        '''
+        task_type = self.query_task_type.currentText()
+        task_name = self.query_task_name.text()
+        parent = self.current_parent_asset.text()
+        session = open_ftrack_session()
+        task = create_task(manage_connection=False,task_name=task_name,task_type=task_type,parent=parent,session=session)
+        session.commit()
+
+        parent_index = self.treeview_wgt.selectionModel().currentIndex()
+        self.model.add_child(parent_index = parent_index,task=task)
+        
+        session.close()
+
+
+    def get_assets(self,type:str,manage_connection:bool,session)-> dict:
+        '''
+        returns a dict with the assets and their data of the chosen type(set,item,character or prop)
+        '''
+        if manage_connection is True:
+            session = open_ftrack_session()
+
+        assets = session.query(f'''Asset_ where parent.name is {type} and project.name is {project_name} ''').all()
+        
+        assets_dict = {}
+
+        for asset in assets:
+            assets_dict[asset.name] = {}
+
+        if manage_connection is True:
+            session.close()
+    
+
+    def set_current_asset_selection(self):
+        logging.debug('Executing set_current_asset_selection')
+        self.current_parent_asset.clear()
+        index = self.treeview_wgt.selectionModel().currentIndex()
+        
+        if index.isValid():
+            item = index.internalPointer()
+
+            if not item.type == self.asset_type:
+                parent_item = item.parent_item
+                current_selection = parent_item.name_item
+
+            else :
+                current_selection = item.name_item
+            
+        else:
+            current_selection = 'Nothing is selected'
+
+        self.current_parent_asset.setText(current_selection)
+
+
+    def delete_selection(self):
+        index = self.treeview_wgt.selectionModel().currentIndex()
+        
+        if index.isValid():
+            item = index.internalPointer()
+
+
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle('Delete ??? Really ???')
+        msg_box.setText(f'Are you sure you want to delete the item {item.name_item} ?')
+        msg_box.setIcon(QMessageBox.Warning)
+
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+
+        result = msg_box.exec()
+
+        if result == QMessageBox.Yes:
+
+            selection_id = item.ftrack_id
+            session=open_ftrack_session()
+            entity = session.get('TypedContext', selection_id)
+            session.delete(entity=entity)
+            session.commit()
+            session.close()
+
+            parent_item  = item.parent_item
+            self.model.beginRemoveRows(index.parent(), index.row(), index.row())
+            parent_item.children_items.remove(item)
+            self.model.endRemoveRows()
+        else:
+            return   
+     
 class Asset_type_subsubtab(QWidget):
 
     '''
@@ -907,4 +1124,5 @@ def create_task(manage_connection:bool,task_name:str,task_type:str,parent,sessio
         session.close()
 
     return task
+
 

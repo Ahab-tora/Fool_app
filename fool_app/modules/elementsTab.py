@@ -2,25 +2,25 @@
 
 #--- PySide6 imports
 
-from PySide6.QtWidgets import QButtonGroup,QRadioButton,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QDialogButtonBox,QDialog,QLabel,QTableView,QHeaderView
-from PySide6.QtWidgets import  QGridLayout, QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy,QLayout,QMenu
+from PySide6.QtWidgets import QButtonGroup,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QTableView,QHeaderView
+from PySide6.QtWidgets import QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy,QMenu
 from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag
 from PySide6.QtCore import Qt,QMimeData,QUrl
 
 #--- Standard library imports
-import os,shutil,sqlite3,logging,uuid,requests,pprint
+import os,shutil,logging,uuid,requests,time
 from pathlib import Path
-from typing import Callable, Optional
-from functools import partial
+from typing import Callable
+
 
 #--- data imports
-
 import data
 from data import global_variables
 
 #--- utilities
 from .utilities import Buttons_gridLayout,doubleClickButton
 #--- --- --- ---#
+
 fool_path = global_variables.fool_path
 
 class ElementsTab(QWidget):
@@ -75,17 +75,18 @@ class ElementsTab(QWidget):
         #self.tabWidget.currentChanged.connect(self.set_activeSoftwareTab)
         self.right_sublayout.addWidget(self.tabWidget)
 
-        response = requests.get(f'{global_variables.queryUrl}/getConfig/{self.name}')
+        response = requests.get(f"{global_variables.queryUrl}/getConfig/{self.name}")
         config = response.json()
 
         self.folderSubtabs = {}
         self.activefolderSubtab = None
+
         for key in config:
             self.folderSubtabs[key['name']] = FoldersSubTab(config=key,parentClass=self,basePath= '')
-            #self.folderSubtabs[key] = FoldersSubTab(config=key,parentClass=self,basePath= '')
             self.tabWidget.addTab(self.folderSubtabs[key['name']],key['name'])
-            
             self.activefolderSubtab = self.folderSubtabs[key['name']]
+
+
     
         self.tabWidget.currentChanged.connect(lambda changeActiveFolder : self.setActivefolderSubtab())
         self.setActivefolderSubtab()
@@ -94,6 +95,10 @@ class ElementsTab(QWidget):
         #--- --- --- Files view
         self.filesView = Files_tableView(dbName = self.getCurrentType,parentClass=self,parentPath=None)
         self.right_sublayout.addWidget(self.filesView)
+
+        #right layout stretch
+        self.right_sublayout.setStretch(0,3)
+        self.right_sublayout.setStretch(1,7)
 
     #--- --- ---
 
@@ -136,7 +141,7 @@ class ElementsTab(QWidget):
 
     def update_rootsView(self):
         'updates the shots view'
-        self.rootsView.set_listView()
+        self.rootsView.setListView()
 
     #--- --- ---
 
@@ -167,13 +172,18 @@ class RootsWidget(QWidget):
         super().__init__()
         self.parentClass = parentClass
 
-        self.rootsLayout = QHBoxLayout()
+        self.rootsLayout = QVBoxLayout()
         self.setLayout(self.rootsLayout)
+
+        self.searchBox = QLineEdit()
+        self.searchBox.textChanged.connect(lambda text: self.setListViewSearch(search=text))
+        self.rootsLayout.addWidget(self.searchBox)
+
 
         #--- --- ---
 
         self.model = QStandardItemModel()
-        self.set_listView()
+        self.setListView()
 
         #--- --- ---
 
@@ -196,7 +206,7 @@ class RootsWidget(QWidget):
 
     #--- --- ---
 
-    def set_listView(self):
+    def setListView(self):
         'sets the listview with the shots of the selected sequence'
 
         self.model.clear()
@@ -210,6 +220,22 @@ class RootsWidget(QWidget):
             item = QStandardItem(root)
             self.model.appendRow(item)
         
+    #--- --- ---
+
+    def setListViewSearch(self,search):
+        'sets the listview with the shots of the selected sequence from search'
+
+        self.model.clear()
+        if not self.parentClass.elementsButtons.currentButton:
+            return
+
+        params = {'search':search}
+        response = requests.get(f'{global_variables.queryUrl}/getRootsSearch/{self.parentClass.getCurrentType()}',params=params)
+        roots = response.json()
+        print(roots)
+        for root in roots:
+            item = QStandardItem(root)
+            self.model.appendRow(item)
 
     #--- --- ---
 
@@ -255,7 +281,6 @@ class FoldersSubTab(QWidget):
 
         self.selectedPath = ''
 
-
         buttonsDict = {}
         def addElements(config:dict,parentLayout,buttonsDict:dict,vis:bool=False,box=None,boxLayout=None,group=None,inheritedPath:str = ''):
 
@@ -270,7 +295,9 @@ class FoldersSubTab(QWidget):
 
             button.clicked.connect(lambda: self.setPath(path=path))
             button.clicked.connect(lambda: self.parentClass.updateFiles())
-            button.doubleClicked.connect(lambda:self.open(path=os.path.join(self.parentClass.getParentPath(),path)))
+            print(self.parentClass.getParentPath(),path)
+            button.doubleClicked.connect(lambda:self.open(path=self.parentClass.getParentPath()))
+            #button.doubleClicked.connect(lambda:self.open(path=os.path.join(self.parentClass.getParentPath(),path)))
 
             if box :
                 boxLayout.addWidget(button)
@@ -362,10 +389,12 @@ class contextMenuTableView(QTableView):
     def contextMenuEvent(self, event):
         menu = QMenu(self)
         openFileButton = menu.addAction("Open file")
+        openFileSetProjectButton = menu.addAction('Open and set project')
         copyFileButton = menu.addAction("Copy file to dekstop")
         refreshButton = menu.addAction('Refresh view')
 
         openFileButton.triggered.connect(self.openFile)
+        openFileSetProjectButton.triggered.connect(self.openFileSetProject)
         copyFileButton.triggered.connect(self.copyFile)
         refreshButton.triggered.connect(self.refreshView)
 
@@ -378,6 +407,33 @@ class contextMenuTableView(QTableView):
 
         if os.path.exists(self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath']):
             os.startfile(self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath'])
+
+    #--- --- ---
+
+    def  openFileSetProject(self):
+
+        if not os.path.exists(self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath']):
+            return
+        
+        currentRecursion = 0
+        maxRecursion = 6 #limit of the recursion
+
+        def checkWorkspace(path):
+
+            parentDir = os.path.dirname(self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath'])
+            folderDir = os.listdir(parentDir)
+
+            if 'worspace.mel' in folderDir:
+                print(folderDir)
+                return
+            
+            currentRecursion += 1
+            if currentRecursion == maxRecursion:
+                return
+            
+            checkWorkspace(path = parentDir)
+            
+        checkWorkspace(path = self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath'] )
 
     #--- --- ---
 
@@ -398,12 +454,15 @@ class contextMenuTableView(QTableView):
     def refreshView(self):
         self.parentClass.setTableView()
 
+    #--- --- ---
+
     def dragEnterEvent(self, event):
-        print("dragEnterEvent")
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
         else:
             event.ignore()
+
+    #--- --- ---
 
     def dragMoveEvent(self, event):
         print("dragMoveEvent")
@@ -412,6 +471,7 @@ class contextMenuTableView(QTableView):
         else:
             event.ignore()
 
+    #--- --- ---
 
     def dropEvent(self,event):
         print(event)
@@ -424,6 +484,8 @@ class contextMenuTableView(QTableView):
             
                 destPath = self.parentClass.parentClass.getParentPath()
                 shutil.copy(droppedFilePath,destPath)
+
+                time.wait(1)
                 self.refreshView()
 
         else:
@@ -462,6 +524,8 @@ def onMayaDroppedPythonFile(*args):
 
             file_path = Path(temp_file_path)
             file_path.unlink()
+
+
 
 class Files_tableView(QWidget):
 
