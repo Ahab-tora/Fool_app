@@ -4,8 +4,8 @@
 
 from PySide6.QtWidgets import QButtonGroup,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QTableView,QHeaderView
 from PySide6.QtWidgets import QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy,QMenu
-from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag
-from PySide6.QtCore import Qt,QMimeData,QUrl
+from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag,QClipboard
+from PySide6.QtCore import Qt,QMimeData,QUrl,QAbstractItemModel,QAbstractTableModel
 
 #--- Standard library imports
 import os,shutil,logging,uuid,requests,time
@@ -294,10 +294,10 @@ class FoldersSubTab(QWidget):
             path = os.path.join(inheritedPath , config['inPath'] ,config['outPath'])
 
             button.clicked.connect(lambda: self.setPath(path=path))
+            
             button.clicked.connect(lambda: self.parentClass.updateFiles())
-            print(self.parentClass.getParentPath(),path)
+
             button.doubleClicked.connect(lambda:self.open(path=self.parentClass.getParentPath()))
-            #button.doubleClicked.connect(lambda:self.open(path=os.path.join(self.parentClass.getParentPath(),path)))
 
             if box :
                 boxLayout.addWidget(button)
@@ -390,11 +390,13 @@ class contextMenuTableView(QTableView):
         menu = QMenu(self)
         openFileButton = menu.addAction("Open file")
         openFileSetProjectButton = menu.addAction('Open and set project')
+        copyPath = menu.addAction("Copy path")
         copyFileButton = menu.addAction("Copy file to dekstop")
         refreshButton = menu.addAction('Refresh view')
 
         openFileButton.triggered.connect(self.openFile)
         openFileSetProjectButton.triggered.connect(self.openFileSetProject)
+        copyPath.triggered.connect(self.copyPath)
         copyFileButton.triggered.connect(self.copyFile)
         refreshButton.triggered.connect(self.refreshView)
 
@@ -434,6 +436,14 @@ class contextMenuTableView(QTableView):
             checkWorkspace(path = parentDir)
             
         checkWorkspace(path = self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath'] )
+
+    #--- --- ---
+
+    def copyPath(self):
+
+        clipboard = QClipboard()
+        path = self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath']
+        clipboard.setText(path)
 
     #--- --- ---
 
@@ -490,7 +500,7 @@ class contextMenuTableView(QTableView):
 
         else:
             event.ignore()
-
+            
     #--- --- ---
 
     def mouseMoveEvent(self, e):
@@ -527,6 +537,44 @@ def onMayaDroppedPythonFile(*args):
 
 
 
+#--- ---  ---#
+
+class FilesTableModel(QAbstractTableModel):
+
+
+    def __init__(self,rows = [], columns = []):
+        super().__init__()
+        self.filesData = data
+        self.rows = rows
+        self.columns = columns
+    
+
+    def rowCount(self,parent):
+        return len(self.rows)
+
+
+    def columnCount(self, parent):
+        return len(self.columns)
+
+
+    def data(self, index, role):
+        row = index.row()
+        column = index.column()
+        if role == Qt.DisplayRole:
+            return self.filesData[row][column]
+
+    def setData(self, index, value, role=Qt.EditRole):
+        row = index.row()
+        column = index.column()
+        if role == Qt.EditRole:
+            self.filesData[row][column] = float(value)
+            self.dataChanged.emit(index, index)#データ変更シグナルを送出
+            return True
+        else:
+            return False
+        
+#--- ---  ---#
+
 class Files_tableView(QWidget):
 
     def __init__(self,
@@ -557,6 +605,7 @@ class Files_tableView(QWidget):
 
         #--- --- ---
 
+        #self.model = FilesTableModel()
         self.model = QStandardItemModel()
         self.model.setHorizontalHeaderLabels(["Name", "Last Modification", "Comment"])
 

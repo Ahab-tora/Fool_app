@@ -51,16 +51,16 @@ def checking_server():
 
 
 if __name__ == '__main__':
+
     print('ah')
     app = QApplication(sys.argv)
     checking_server()
-    
     print('ah!')
     window = Fool()
     print('ahah!')
     window.show()
     print('ah..')
     app.exec()
-    print('Closing Fool')
+    print('Closing Fool!')
 
 
