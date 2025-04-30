@@ -52,7 +52,7 @@ def checking_server():
 
 if __name__ == '__main__':
 
-    print('ah')
+    print('aah')
     app = QApplication(sys.argv)
     checking_server()
     print('ah!')
