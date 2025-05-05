@@ -5,7 +5,7 @@
 from PySide6.QtWidgets import QButtonGroup,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QTableView,QHeaderView
 from PySide6.QtWidgets import QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy,QMenu
 from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag,QClipboard
-from PySide6.QtCore import Qt,QMimeData,QUrl,QAbstractItemModel,QAbstractTableModel
+from PySide6.QtCore import Qt,QMimeData,QUrl,QAbstractItemModel,QAbstractTableModel,QModelIndex
 
 #--- Standard library imports
 import os,shutil,logging,uuid,requests,time
@@ -387,17 +387,23 @@ class contextMenuTableView(QTableView):
     #--- --- ---
 
     def contextMenuEvent(self, event):
+
         menu = QMenu(self)
+
         openFileButton = menu.addAction("Open file")
         openFileSetProjectButton = menu.addAction('Open and set project')
         copyPath = menu.addAction("Copy path")
-        copyFileButton = menu.addAction("Copy file to dekstop")
+        copyFile = menu.addAction('Copy file')
+        pasteFile = menu.addAction('Paste File')
+        copyFileToDekstopButton = menu.addAction("Copy file to dekstop")
         refreshButton = menu.addAction('Refresh view')
 
         openFileButton.triggered.connect(self.openFile)
         openFileSetProjectButton.triggered.connect(self.openFileSetProject)
         copyPath.triggered.connect(self.copyPath)
-        copyFileButton.triggered.connect(self.copyFile)
+        copyFile.triggered.connect(self.copyFile)
+        pasteFile.triggered.connect(self.pasteFile)
+        copyFileToDekstopButton.triggered.connect(self.copyFileToDekstop)
         refreshButton.triggered.connect(self.refreshView)
 
         selected_action = menu.exec(event.globalPos())
@@ -448,6 +454,33 @@ class contextMenuTableView(QTableView):
     #--- --- ---
 
     def copyFile(self):
+        filePath = self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath']
+        
+        if not os.path.exists(filePath):
+            return
+        
+        print(filePath)
+        mime = QMimeData()
+        mime.setUrls([QUrl.fromLocalFile(filePath)])
+
+        clipboard = QClipboard()
+        clipboard.setMimeData(mime)
+
+    #--- --- ---
+
+    def pasteFile(self):
+        clipboard = QClipboard()
+
+        destPath = self.parentClass.parentClass.getParentPath()
+
+        url = QUrl(clipboard.text())
+        filePath = url.toLocalFile()
+        print(filePath)
+        if os.path.exists(filePath):
+            shutil.copy(filePath,destPath)
+
+
+    def copyFileToDekstop(self):
 
         filePath = self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath']
         if os.path.exists(filePath):
@@ -527,15 +560,13 @@ def onMayaDroppedPythonFile(*args):
             with open(temp_file_path, "w") as temp_file:
                 temp_file.write(maya_code)
 
-
+            
             mime.setUrls([QUrl.fromLocalFile(temp_file_path)])
             drag.setMimeData(mime)
             drag.exec()
 
             file_path = Path(temp_file_path)
             file_path.unlink()
-
-
 
 #--- ---  ---#
 
@@ -620,13 +651,12 @@ class Files_tableView(QWidget):
         layout.addWidget(self.tableView)
         self.visualSettings()
 
-
-
     #--- --- ---
 
     def setSelectedFile(self):
         print('setting selected file')
         index = self.tableView.currentIndex()
+
         item = self.model.itemFromIndex(index)
         fileName = item.text()
 

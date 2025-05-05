@@ -1,14 +1,11 @@
 #--- --- Imports
 
 #--- PySide6 imports
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLineEdit, QTableView,QTabWidget,QWidget,QCompleter,QMessageBox
-from PySide6.QtCore import QStringListModel,Qt
-from PySide6.QtGui import QCursor,QPixmap
+from PySide6.QtWidgets import QApplication,QMessageBox
 
 #--- Standard library imports
 import sys
 import requests
-import sqlite3
 
 #--- data imports
 import data
