@@ -638,9 +638,8 @@ class Files_tableView(QWidget):
 
         #self.model = FilesTableModel()
         self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels(["Name", "Last Modification", "Comment"])
-
-        self.selectedFileName = None
+        self.model.setHorizontalHeaderLabels(["Name", "Last Modification", "Comment","Full Path"])
+        self.model.itemChanged.connect(self.itemChanged)
 
         #--- --- ---
 
@@ -664,6 +663,31 @@ class Files_tableView(QWidget):
         print(self.selectedFileName)
 
     #--- --- ---
+
+    def itemChanged(self, item: QStandardItem):
+
+        if not item.column() == 2:
+            return
+        
+        row = item.row()
+        #print(item.data[1])
+        comment = item.text()
+        print(comment)
+
+        itemPath = self.model.item(row, 3)
+        fullPath =itemPath.text()
+
+        payload = {
+                "dbName": self.dbName(),
+                "fullPath": fullPath,
+                "comment": comment}
+
+        requests.post(url=f'{global_variables.queryUrl}/addComment',json=payload)
+
+
+        '''params = {"parentPath": self.parentClass.getParentPath()}
+        response = requests.post(url=f'{global_variables.queryUrl}/addComment/{self.dbName()}',params=params)'''
+        
 
     def addComment(self):
 
@@ -701,6 +725,7 @@ class Files_tableView(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.Stretch)
 
+        self.tableView.setColumnHidden(3,True)
     #--- --- ---
 
     def setTableView(self):
@@ -728,8 +753,12 @@ class Files_tableView(QWidget):
             size =QStandardItem(data[3])
             lastModification = QStandardItem(data[4].split()[0])
             comment = QStandardItem(data[5])
-            self.model.appendRow([name, lastModification,comment])
+            #self.model.appendRow([name, lastModification,comment])
+            
 
+            #self.model.setHorizontalHeaderLabels(["Name", "Full Path", "Last Modification", "Comment"])
+            self.model.appendRow([name, lastModification, comment, fullPath])
+            
         self.visualSettings()
 
     #--- --- ---
