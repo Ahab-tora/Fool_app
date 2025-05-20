@@ -4,8 +4,8 @@
 
 from PySide6.QtWidgets import QButtonGroup,QAbstractItemView,QHBoxLayout,QListView,QWidget,QLineEdit,QVBoxLayout,QPushButton,QTabWidget,QGroupBox,QTableView,QHeaderView
 from PySide6.QtWidgets import QWidget, QVBoxLayout,QPushButton,QLineEdit, QMessageBox,QSizePolicy,QMenu
-from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag,QClipboard
-from PySide6.QtCore import Qt,QMimeData,QUrl,QAbstractItemModel,QAbstractTableModel,QModelIndex
+from PySide6.QtGui import QStandardItemModel,QStandardItem,QDrag,QClipboard,QAction,QActionGroup
+from PySide6.QtCore import Qt,QMimeData,QUrl,QAbstractItemModel,QAbstractTableModel,QModelIndex,QTimer
 
 #--- Standard library imports
 import os,shutil,logging,uuid,requests,time
@@ -14,15 +14,20 @@ from typing import Callable
 
 
 #--- data imports
+
 import data
 from data import global_variables
 
 #--- utilities
+
 from .utilities import Buttons_gridLayout,doubleClickButton
+
+#--- --- --- ---#
 #--- --- --- ---#
 
 fool_path = global_variables.fool_path
 
+#--- ---  ---#
 class ElementsTab(QWidget):
     def __init__(self,name):
         'main tab to manage elements'
@@ -161,6 +166,7 @@ class ElementsTab(QWidget):
         pass
 
 
+#--- ---  ---#
 
 
 class RootsWidget(QWidget):
@@ -384,6 +390,10 @@ class contextMenuTableView(QTableView):
         self.setDragDropOverwriteMode(False)
         self.setDragDropMode(QTableView.DropOnly) 
 
+        #defaultDrop,referenceDrop,replaceRefDrop
+        self.dropMode = 'defaultDrop'
+
+
     #--- --- ---
 
     def contextMenuEvent(self, event):
@@ -391,15 +401,43 @@ class contextMenuTableView(QTableView):
         menu = QMenu(self)
 
         openFileButton = menu.addAction("Open file")
-        openFileSetProjectButton = menu.addAction('Open and set project')
+        refreshButton = menu.addAction('Refresh view')
+        #openFileSetProjectButton = menu.addAction('Open and set project')
+        fileOpsSeparator = menu.addSeparator()
         copyPath = menu.addAction("Copy path")
         copyFile = menu.addAction('Copy file')
         pasteFile = menu.addAction('Paste File')
         copyFileToDekstopButton = menu.addAction("Copy file to dekstop")
-        refreshButton = menu.addAction('Refresh view')
+
+        optionsSeparator = menu.addSeparator()
+
+
+        dropMenu = menu.addMenu('Drop options')
+
+        dropModes = {}
+
+        dropModes['defaultDrop'] = QAction('Default drop', self)
+        dropModes['defaultDrop'].setCheckable(True)
+        
+        dropModes['referenceDrop'] = QAction('Reference drop', self)
+        dropModes['referenceDrop'].setCheckable(True)
+
+        dropModes['replaceRefDrop'] = QAction('Replace ref drop', self)
+        dropModes['replaceRefDrop'].setCheckable(True)
+
+        dropModes[self.dropMode].setChecked(True)
+
+        def setDropMode(dropMode):
+            self.dropMode = dropMode
+
+        for dropMode in dropModes.keys():
+            dropMenu.addAction(dropModes[dropMode])
+            dropModes[dropMode].triggered.connect(lambda checked, m=dropMode: setDropMode(m))
+
+
 
         openFileButton.triggered.connect(self.openFile)
-        openFileSetProjectButton.triggered.connect(self.openFileSetProject)
+        #openFileSetProjectButton.triggered.connect(self.openFileSetProject)
         copyPath.triggered.connect(self.copyPath)
         copyFile.triggered.connect(self.copyFile)
         pasteFile.triggered.connect(self.pasteFile)
@@ -479,6 +517,7 @@ class contextMenuTableView(QTableView):
         if os.path.exists(filePath):
             shutil.copy(filePath,destPath)
 
+    #--- --- ---
 
     def copyFileToDekstop(self):
 
@@ -528,13 +567,66 @@ class contextMenuTableView(QTableView):
                 destPath = self.parentClass.parentClass.getParentPath()
                 shutil.copy(droppedFilePath,destPath)
 
-                time.wait(1)
+                time.sleep(1)
                 self.refreshView()
 
         else:
             event.ignore()
             
     #--- --- ---
+
+    def referenceDrop(self,mime,drag,filePath):
+        maya_code = f'''
+import maya.cmds as cmds
+def onMayaDroppedPythonFile(*args):
+    filePath = '{filePath}'
+    namespace = filePath.split('/')[-1][0:-3]
+    cmds.file(filePath, reference=True,namespace=namespace)'''
+
+        temp_file_name = f'temp_file_drop_{uuid.uuid4()}.py'
+        temp_file_path = fool_path + '\\temp\\' + temp_file_name 
+        temp_file_path = temp_file_path.replace('\\','/')
+
+
+        with open(temp_file_path, "w") as temp_file:
+            temp_file.write(maya_code)
+
+            
+        mime.setUrls([QUrl.fromLocalFile(temp_file_path)])
+        drag.setMimeData(mime)
+        drag.exec()
+
+        file_path = Path(temp_file_path)
+        file_path.unlink()
+
+
+    def dropReplaceReference(self,mime,drag,filePath):
+
+
+        fileName = os.path.basename(filePath).split('.')[0]
+
+        maya_code = f'''
+import maya.cmds as cmds
+def onMayaDroppedPythonFile(*args):
+    filePath = '{filePath}'
+    namespace = filePath.split('/')[-1][0:-3]
+    cmds.file('{filePath}', lr='{fileName}')'''
+
+        temp_file_name = f'temp_file_drop_{uuid.uuid4()}.py'
+        temp_file_path = fool_path + '\\temp\\' + temp_file_name 
+        temp_file_path = temp_file_path.replace('\\','/')
+
+
+        with open(temp_file_path, "w") as temp_file:
+            temp_file.write(maya_code)
+
+            
+        mime.setUrls([QUrl.fromLocalFile(temp_file_path)])
+        drag.setMimeData(mime)
+        drag.exec()
+
+        file_path = Path(temp_file_path)
+        file_path.unlink()
 
     def mouseMoveEvent(self, e):
         if e.buttons() == Qt.MouseButton.LeftButton:
@@ -543,30 +635,15 @@ class contextMenuTableView(QTableView):
 
             filePath = self.parentClass.itemsData[self.parentClass.selectedFileName]['fullPath'].replace('\\','//').replace('//','/')
 
-
-
-            maya_code = f'''
-import maya.cmds as cmds
-def onMayaDroppedPythonFile(*args):
-    filePath = '{filePath}'
-    namespace = filePath.split('/')[-1][0:-3]
-    cmds.file(filePath, reference=True,namespace=namespace)'''
-
-            temp_file_name = f'temp_file_drop_{uuid.uuid4()}.py'
-            temp_file_path = fool_path + '\\temp\\' + temp_file_name 
-            temp_file_path = temp_file_path.replace('\\','/')
-
-
-            with open(temp_file_path, "w") as temp_file:
-                temp_file.write(maya_code)
-
-            
-            mime.setUrls([QUrl.fromLocalFile(temp_file_path)])
-            drag.setMimeData(mime)
-            drag.exec()
-
-            file_path = Path(temp_file_path)
-            file_path.unlink()
+             #defaultDrop,referenceDrop,replaceRefDrop
+            if self.dropMode ==  'defaultDrop':
+                mime.setUrls([QUrl.fromLocalFile(filePath)])
+                drag.setMimeData(mime)
+                drag.exec()
+            elif self.dropMode ==  'referenceDrop':
+                self.referenceDrop(drag=drag,mime=mime,filePath=filePath)
+            elif self.dropMode == 'replaceRefDrop':
+                self.dropReplaceReference(drag=drag,mime=mime,filePath=filePath)
 
 #--- ---  ---#
 
@@ -688,6 +765,7 @@ class Files_tableView(QWidget):
         '''params = {"parentPath": self.parentClass.getParentPath()}
         response = requests.post(url=f'{global_variables.queryUrl}/addComment/{self.dbName()}',params=params)'''
         
+    #--- --- ---
 
     def addComment(self):
 
@@ -726,6 +804,7 @@ class Files_tableView(QWidget):
         header.setSectionResizeMode(2, QHeaderView.Stretch)
 
         self.tableView.setColumnHidden(3,True)
+    
     #--- --- ---
 
     def setTableView(self):
